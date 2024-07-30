@@ -34,6 +34,7 @@ class HomeView extends StackedView<HomeViewModel> {
                   final chat = viewModel.chats![index];
                   return decContainer(
                     onTap: () => viewModel.navToChat(chat),
+                    child: styledText(text: chat.chatName),
                     height: 50,
                     color: Colors.blueGrey,
                     // child: styledText(text: chat.n)

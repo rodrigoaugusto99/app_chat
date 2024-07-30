@@ -50,7 +50,7 @@ class ChatService {
         //atribuir list<usermodel>
         final data = chatDoc.data() as Map<String, dynamic>;
         for (String userId in data['userIds']) {
-          if (userId == _userService.user.id) continue;
+          // if (userId == _userService.user.id) continue;
           final userMode = await getOtherUserById(userId);
           chatModel.users.add(userMode);
         }
@@ -151,6 +151,36 @@ class ChatService {
       return chatModel;
     } catch (e) {
       _log.i('Erro ao obter os chats do usuário: $e');
+      throw Exception('Erro desconhecido');
+    }
+  }
+
+  Future<void> sendMessage() async {}
+  Future<List<MessageModel>> getMessages(String chatId) async {
+    // Referência para o Firestore
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    try {
+      // Referência para a subcollection 'chats'
+      CollectionReference messagesRef =
+          firestore.collection('chats').doc(chatId).collection('messages');
+      QuerySnapshot messagesSnapshot =
+          await messagesRef.orderBy('createdAt', descending: true).get();
+
+      if (messagesSnapshot.docs.isEmpty) {
+        return [];
+      }
+
+      List<MessageModel> messages = [];
+
+      for (var message in messagesSnapshot.docs) {
+        final messageModel = MessageModel.fromDocument(message);
+        messages.add(messageModel);
+      }
+
+      return messages;
+    } catch (e) {
+      _log.i('Erro ao enviar a mensagem: $e');
       throw Exception('Erro desconhecido');
     }
   }

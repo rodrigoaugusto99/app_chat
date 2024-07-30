@@ -1,0 +1,32 @@
+- busca de mensagem por palavra chave
+- carregar primeiro as ultimas mensagens, 
+depois vai carregando as mais antiga 
+- ao carregar as 20 ultimas mensagens e chegar no topo da conversa,
+ter botao ou listener para carregar as proximas 20 mensagens mais antigas.
+-provavelmente vai ser foda sempre carregar todas as mensagens. entamos teremos que manter
+na memoria quando as conversas de um chat forem carregadas, por ex singleton da conversa x.
+E se tiver um cache mais pika? sempre vai carregar os chats e mensagens que estao no cache.
+Ai se enviar ou receber uma nova mensagem, atualiza no banco e tbm atualiza o cache.
+como o cache seria feito? tipo como mostraria as mensagens corretas? por exemplo, se eu exclui uma mensagem,
+tbm tenho que excluir no cache. sempre vou ter que verificar se o firestore e o cache estao sincronizados?
+oq fzr pra nao ter conflito, ficar diferente um do outro? USAR QUAL CACHE? 
+
+-cada mensagem tera, assim como cada chatModel, seu UserModel correspondente, do senderId?
+Isso facilita pra mostrar quem mandou tal mensagem, tendo facilmente o nome e avatar da pessoa.
+Dessa forma, mais querys pra buscar aquele user correspondente. 
+
+logo, forma melhor - ja que ja temos ids de todos os participantes da conversa E seus UserModels, 
+pois eles estao no ChatModel daquele chat, entao vamos apenas fazer um map como base para exibicao dos dados.
+    {
+        id 1: {name: rodrigo, avatar: url}
+        id 2: {name: jefferson, avatar: url}
+    }
+
+    Dessa forma, para exibir a mensagem x, vamos pegar o value da key x.senderId.
+
+
+    Alias...melhor pegar todos os UserModels de cada ChatModel e e atribuir cada UserModel a uma
+    mensagem diferente, senderId = UserModel.id. Nao teria problema pois nem eh assincrono, eh codigo
+
+
+-fazer todo os tratamentos de erros com AppError (throw no service com msg, catch nos vm p exibir pras views)

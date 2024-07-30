@@ -1,4 +1,5 @@
 import 'package:app_chat/models/chat_model.dart';
+import 'package:app_chat/ui/utils/helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 
@@ -23,10 +24,33 @@ class ChatView extends StackedView<ChatViewModel> {
             backgroundColor: Theme.of(context).colorScheme.surface,
             appBar: AppBar(
               //todo: mover logica p viewModel p exibir todos os users se tiver + de 1.
-              title: Text(chat.users[0].name),
+              title: Text(chat.chatName),
             ),
-            body: Container(
-              padding: const EdgeInsets.only(left: 25.0, right: 25.0),
+            //todo: carregar primeiro os mais recentes. colocar reverse.
+            body: ListView.builder(
+              itemCount: viewModel.messages!.length,
+              itemBuilder: (BuildContext context, int index) {
+                final message = viewModel.messages![index];
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: decContainer(
+                    allPadding: 10,
+                    color: Colors.grey,
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            if (message.user != null &&
+                                message.user!.photoUrl != '')
+                              Image.network(message.user!.photoUrl),
+                          ],
+                        ),
+                        styledText(text: message.text),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
             bottomNavigationBar: Container(
               padding: EdgeInsets.only(
