@@ -30,3 +30,7 @@ pois eles estao no ChatModel daquele chat, entao vamos apenas fazer um map como 
 
 
 -fazer todo os tratamentos de erros com AppError (throw no service com msg, catch nos vm p exibir pras views)
+
+-estilizar minimamente as mensagens e alinhar de acordo com os senders.
+
+-possibilitar envio de videos e fotos, e poder salvar no celular o video que o outro mandou,

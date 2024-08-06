@@ -23,7 +23,7 @@ class ShowUsersDialogModel extends BaseViewModel {
     //todo: lembrar de nos viewmodels sempre fazer try catch pra pegar os erros
     //todo: que vieram dos services pra poder exibir ao usuario.
     final chatModel = await _chatService.createOrGetChat(receiverId);
-    //navega pro chat criado.
+    //navega pro chat criado ou recuperado.
     _navigationService.navigateToChatView(chat: chatModel);
   }
 }

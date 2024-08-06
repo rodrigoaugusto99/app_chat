@@ -33,13 +33,4 @@ class UserModel {
       email: map['email'],
     );
   }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'photoURL': photoUrl,
-      'email': email,
-      'chatIds': chatIds,
-    };
-  }
 }

@@ -31,9 +31,9 @@ class UserService {
     try {
       QuerySnapshot querySnapshot = await firestore.collection('users').get();
 
-      // if (querySnapshot.docs.isEmpty) {
-      //   throw Exception('Chat does not exist');
-      // }
+      if (querySnapshot.docs.isEmpty) {
+        return [];
+      }
 
       List<UserModel> users = [];
 

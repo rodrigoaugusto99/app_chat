@@ -23,4 +23,21 @@ class MessageModel {
       createdAt: doc['createdAt'],
     );
   }
+
+  factory MessageModel.fromMap(Map<String, dynamic> map) {
+    return MessageModel(
+      senderId: map['senderId'],
+      text: map['message'],
+      createdAt: map['createdAt'],
+    );
+  }
+
+  // factory ChatModel.fromMap(Map<String, dynamic> map) {
+  //   return ChatModel(
+  //     createdAt: map['createdAt'],
+  //     users: [],
+  //     chatName: '',
+  //     userIds: map['userIds'],
+  //   );
+  // }
 }

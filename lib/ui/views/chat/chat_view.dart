@@ -21,10 +21,34 @@ class ChatView extends StackedView<ChatViewModel> {
     return viewModel.isBusy
         ? const Center(child: CircularProgressIndicator())
         : Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.surface,
+            backgroundColor: Colors.black,
             appBar: AppBar(
-              //todo: mover logica p viewModel p exibir todos os users se tiver + de 1.
-              title: Text(chat.chatName),
+              // Dividindo nomes dos usuários por vírgula e exibindo imagens lado a lado
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      chat.users.map((user) => user.name).join(', '),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (chat.users.length > 1)
+                    Row(
+                      children: chat.users.map((user) {
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              user.photoUrl,
+                              height: 50,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                ],
+              ),
             ),
             //todo: carregar primeiro os mais recentes. colocar reverse.
             body: ListView.builder(
@@ -35,17 +59,60 @@ class ChatView extends StackedView<ChatViewModel> {
                   padding: const EdgeInsets.all(8.0),
                   child: decContainer(
                     allPadding: 10,
-                    color: Colors.grey,
-                    child: Column(
+                    child: Row(
+                      mainAxisAlignment:
+                          message.senderId == viewModel.myUser!.id
+                              ? MainAxisAlignment.end
+                              : MainAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            if (message.user != null &&
-                                message.user!.photoUrl != '')
-                              Image.network(message.user!.photoUrl),
-                          ],
-                        ),
-                        styledText(text: message.text),
+                        message.senderId == viewModel.myUser!.id
+                            ? Container(
+                                padding: const EdgeInsets.all(10),
+                                color: Colors.grey,
+                                child: Row(
+                                  children: [
+                                    styledText(text: message.text),
+                                    widthSeparator(10),
+                                    if (message.user!.photoUrl == '')
+                                      const Icon(
+                                        Icons.person,
+                                        size: 40,
+                                      ),
+                                    if (message.user!.photoUrl != '')
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Image.network(
+                                          message.user!.photoUrl,
+                                          height: 50,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              )
+                            : Container(
+                                padding: const EdgeInsets.all(10),
+                                color: Colors.white,
+                                child: Row(
+                                  children: [
+                                    if (message.user!.photoUrl != '')
+                                      ClipRRect(
+                                        borderRadius:
+                                            BorderRadius.circular(100),
+                                        child: Image.network(
+                                          message.user!.photoUrl,
+                                          height: 50,
+                                        ),
+                                      ),
+                                    if (message.user!.photoUrl == '')
+                                      const Icon(
+                                        Icons.person,
+                                        size: 50,
+                                      ),
+                                    widthSeparator(10),
+                                    styledText(text: message.text),
+                                  ],
+                                ),
+                              ),
                       ],
                     ),
                   ),
@@ -72,9 +139,12 @@ class ChatView extends StackedView<ChatViewModel> {
                     ),
                   ),
                   // widthSeparator(10),
-                  const Expanded(
-                    child: Icon(
-                      Icons.send,
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: viewModel.sendMessage,
+                      child: const Icon(
+                        Icons.send,
+                      ),
                     ),
                   )
                 ],

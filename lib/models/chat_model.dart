@@ -31,4 +31,13 @@ class ChatModel {
       userIds: List<String>.from(doc['userIds'] as List<dynamic>),
     );
   }
+
+  // factory ChatModel.fromMap(Map<String, dynamic> map) {
+  //   return ChatModel(
+  //     createdAt: map['createdAt'],
+  //     users: [],
+  //     chatName: '',
+  //     userIds: map['userIds'],
+  //   );
+  // }
 }

@@ -1,37 +1,22 @@
+import 'dart:async';
+
 import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/app/app.logger.dart';
+import 'package:app_chat/exceptions/app_error.dart';
 import 'package:app_chat/models/chat_model.dart';
 import 'package:app_chat/models/message_model.dart';
 import 'package:app_chat/models/user_model.dart';
 import 'package:app_chat/services/user_service.dart';
+import 'package:app_chat/ui/utils/firestore_utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:stacked_services/stacked_services.dart';
 
 class ChatService {
   final _log = getLogger('ChatService');
   final _userService = locator<UserService>();
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  Future<UserModel> getOtherUserById(String id) async {
-    // Referência para o Firestore
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    try {
-      DocumentSnapshot documentSnapshot =
-          await firestore.collection('users').doc(id).get();
-
-      if (!documentSnapshot.exists) {
-        throw Exception('Chat does not exist');
-      }
-
-      final userModel = UserModel.fromDocument(documentSnapshot);
-
-      return userModel;
-    } catch (e) {
-      _log.i('Erro ao obter os chats do usuário: $e');
-      throw Exception('Erro desconhecido');
-    }
-  }
-
+//?load user chats
   Future<List<ChatModel>> getUserChats() async {
     // Referência para o Firestore
     FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -40,19 +25,23 @@ class ChatService {
       List<ChatModel> chats = [];
 
       // Para cada ID de chat, pega o documento correspondente na coleção 'chats'
+      /*pega os ids dentro do array chatIds do doc do usuario,
+      itera por todos e faz um ChatModel. */
       for (String chatId in _userService.user.chatIds) {
         DocumentReference chatRef = firestore.collection('chats').doc(chatId);
+        //separo o chatRef pq vou usar de novo depois usar com .data()
         DocumentSnapshot chatDoc = await chatRef.get();
+        //!
         if (!chatDoc.exists) {
           throw Exception('Cannot find chat');
         }
         final chatModel = ChatModel.fromDocument(chatDoc);
-        //atribuir list<usermodel>
+
         final data = chatDoc.data() as Map<String, dynamic>;
         for (String userId in data['userIds']) {
-          // if (userId == _userService.user.id) continue;
-          final userMode = await getOtherUserById(userId);
-          chatModel.users.add(userMode);
+          if (userId == _userService.user.id) continue;
+          final userModel = await FirestoreUtils.getUserModelById(userId);
+          chatModel.users.add(userModel);
         }
         chats.add(chatModel);
       }
@@ -66,6 +55,7 @@ class ChatService {
     }
   }
 
+//?load messages from some chats
   Future<List<MessageModel>> getChatMessages(String chatId) async {
     // Referência para o Firestore
     FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -100,11 +90,12 @@ class ChatService {
 
       return messages;
     } catch (e) {
-      _log.i('Erro ao obter os chats do usuário: $e');
+      _log.e('Erro ao obter os chats do usuário: $e');
       throw Exception('Erro desconhecido');
     }
   }
 
+//?if chat exists, return its ChatModel. if does not exist, create and return it.
   Future<ChatModel> createOrGetChat(String receiverId) async {
     // Referência para o Firestore
     FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -139,12 +130,13 @@ class ChatService {
 
       DocumentReference chatRef = await chats.add(chatData);
 
-      //! primeiro eh criado sem a subcollection messages, eh criado na primeira msg
+      //! primeiro eh criado sem a subcollection messages, isso eh criado na primeira msg
 
       // if (!chatDoc.) {
       //   throw Exception('Chat does not exist');
       // }
 
+//o chatRef eh o documento, entao tem o .id. Logo, id nao precisa ser nullable
       final chatSnapshot = await chatRef.get();
       final chatModel = ChatModel.fromDocument(chatSnapshot);
 
@@ -155,7 +147,31 @@ class ChatService {
     }
   }
 
-  Future<void> sendMessage() async {}
+//?send message
+  Future<MessageModel> sendMessage({
+    required String message,
+    required String chatId,
+  }) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    try {
+      CollectionReference messagesRef =
+          firestore.collection('chats').doc(chatId).collection('messages');
+
+//criando map pra tacar dentro da colecao de messages e p dps fazer o fromMap pra MessageModel.
+      final messageDoc = {
+        'senderId': _userService.user.id!,
+        'message': message,
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      };
+
+      messagesRef.add(messageDoc);
+      return MessageModel.fromMap(messageDoc);
+    } on Exception catch (e) {
+      throw AppError(message: e.toString());
+    }
+  }
+
   Future<List<MessageModel>> getMessages(String chatId) async {
     // Referência para o Firestore
     FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -174,6 +190,7 @@ class ChatService {
       List<MessageModel> messages = [];
 
       for (var message in messagesSnapshot.docs) {
+        //todo: if message does not existe, send some default error message to show on the place of old lost message.
         final messageModel = MessageModel.fromDocument(message);
         messages.add(messageModel);
       }
