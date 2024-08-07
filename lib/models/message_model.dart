@@ -5,13 +5,13 @@ class MessageModel {
   String? id;
   String senderId;
   UserModel? user;
-  String text;
+  String message;
   Timestamp createdAt;
   MessageModel({
     this.id,
     this.user,
     required this.senderId,
-    required this.text,
+    required this.message,
     required this.createdAt,
   });
 
@@ -19,7 +19,7 @@ class MessageModel {
     return MessageModel(
       id: doc.id,
       senderId: doc['senderId'],
-      text: doc['message'],
+      message: doc['message'],
       createdAt: doc['createdAt'],
     );
   }
@@ -27,7 +27,7 @@ class MessageModel {
   factory MessageModel.fromMap(Map<String, dynamic> map) {
     return MessageModel(
       senderId: map['senderId'],
-      text: map['message'],
+      message: map['message'],
       createdAt: map['createdAt'],
     );
   }

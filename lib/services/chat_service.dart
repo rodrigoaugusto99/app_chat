@@ -16,6 +16,13 @@ class ChatService {
   final _userService = locator<UserService>();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
+  List<ChatModel>? _chats;
+  List<ChatModel>? get chats => _chats;
+
+  Future<void> init() async {
+    _chats = await getUserChats();
+  }
+
 //?load user chats
   Future<List<ChatModel>> getUserChats() async {
     // Referência para o Firestore

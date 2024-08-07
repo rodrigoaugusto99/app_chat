@@ -27,7 +27,7 @@ class ChatViewModel extends BaseViewModel {
   StreamSubscription? _subscription;
   List<MessageModel>? messages;
 
-  Future<void> setLedgerBookListener() async {
+  Future<void> setChatListener() async {
     //ouvindo a query de documentos desse chats
     final query = FirebaseFirestore.instance
         .collection('chats')
@@ -45,8 +45,12 @@ class ChatViewModel extends BaseViewModel {
         if (change.type == DocumentChangeType.added) {
           final messageModel = MessageModel.fromDocument(change.doc);
 //atribuindo o user na mensagem
-          messageModel.user =
-              chat.users.firstWhere((user) => user.id == messageModel.senderId);
+          if (messageModel.senderId == myUser!.id) {
+            messageModel.user = myUser;
+          } else {
+            messageModel.user = chat.users
+                .firstWhere((element) => element.id == messageModel.senderId);
+          }
           messages!.add(messageModel);
           notifyListeners();
         }
@@ -90,12 +94,17 @@ class ChatViewModel extends BaseViewModel {
     if (messages == null) return; //todo: grab error
     //todo: iterar por cada msg e inserir UserModel correspondente
     for (var message in messages!) {
-      message.user =
-          chat.users.firstWhere((element) => element.id == message.senderId);
+      if (message.senderId == myUser!.id) {
+        //aqui posso colocar uma flag na mensagem pra dizer que eh minha, pro exemplo.
+        message.user = myUser;
+      } else {
+        message.user =
+            chat.users.firstWhere((element) => element.id == message.senderId);
+      }
     }
 
     notifyListeners();
-    setLedgerBookListener();
+    setChatListener();
     setBusy(false);
   }
 }

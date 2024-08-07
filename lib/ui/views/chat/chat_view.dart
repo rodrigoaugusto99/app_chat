@@ -71,7 +71,7 @@ class ChatView extends StackedView<ChatViewModel> {
                                 color: Colors.grey,
                                 child: Row(
                                   children: [
-                                    styledText(text: message.text),
+                                    styledText(text: message.message),
                                     widthSeparator(10),
                                     if (message.user!.photoUrl == '')
                                       const Icon(
@@ -109,7 +109,7 @@ class ChatView extends StackedView<ChatViewModel> {
                                         size: 50,
                                       ),
                                     widthSeparator(10),
-                                    styledText(text: message.text),
+                                    styledText(text: message.message),
                                   ],
                                 ),
                               ),
@@ -126,13 +126,13 @@ class ChatView extends StackedView<ChatViewModel> {
                 //right: 24,
                 top: 10,
               ),
-              color: Colors.orange,
+              color: Colors.grey,
               child: Row(
                 children: [
                   Expanded(
                     flex: 5,
                     child: Container(
-                      color: Colors.red,
+                      color: Colors.white,
                       child: TextField(
                         controller: viewModel.controller,
                       ),

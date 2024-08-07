@@ -36,19 +36,26 @@ class HomeViewModel extends BaseViewModel {
   Future<void> init() async {
     setBusy(true);
     user = _userService.user;
+
     //!precisa disso? no app inteiro, n seria bom um listener q verifica se usuario esta online ou nao?
     if (user == null) return;
-    chats = await _chatService.getUserChats();
+    _log.i(user!.id);
+    chats = _chatService.chats;
     if (chats == null) return;
+
+    //iterando por todos os chats que o usuario tem
     for (var chat in chats!) {
-      // chat.chatName = chat.users.
       String chatName = '';
+      //iterando por todos os usuarios de cada chhat
       for (var user in chat.users) {
         int count = 0;
+        //quando chegar no meu usuario, ignorar
         if (user.id == _userService.user.id) continue;
-        if (chat.users.length == 2) {
+        //se tem so um usuario, entao eh um chat cmg e outra pessoa (2 pessoas)
+        if (chat.users.length == 1) {
           chatName += user.name;
-        } else if (chat.userIds.length > 2) {
+          //se tem mais de uma pessoa, entao sao 3 (contando cmg). Entao o nome do chat sao todos eles (menos eu)
+        } else if (chat.userIds.length > 1) {
           chatName += count == 0 ? user.name : ', ${user.name}';
           count++;
         } else {

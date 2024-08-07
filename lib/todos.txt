@@ -34,3 +34,12 @@ pois eles estao no ChatModel daquele chat, entao vamos apenas fazer um map como 
 -estilizar minimamente as mensagens e alinhar de acordo com os senders.
 
 -possibilitar envio de videos e fotos, e poder salvar no celular o video que o outro mandou,
+
+fazer varios tipos de tela de chat, tipo so mostrando a msg e foto,
+ou mostrando so o nome e mensagem, etc. diferentes bubbles.
+
+
+Quero com que apenas as mensagens nao sejam carregadas todas de uma vez por singleton no inicio do app.
+Ai por exemplo, quando abrir um chat, carrega tudo ou um pouco e deixa em cache pra nao precisasr carregar de novo 
+quando entrar no mesmo chat d enovo.
+

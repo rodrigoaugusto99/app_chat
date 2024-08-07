@@ -1,6 +1,7 @@
 import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/app/app.router.dart';
 import 'package:app_chat/services/auth_service.dart';
+import 'package:app_chat/services/chat_service.dart';
 import 'package:app_chat/services/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:stacked/stacked.dart';
@@ -15,7 +16,7 @@ class StartupViewModel extends BaseViewModel {
     await Future.delayed(const Duration(milliseconds: 200));
 
     notifyListeners();
-    locator<AuthService>().init();
+    await locator<AuthService>().init();
 
     //await Future.delayed(const Duration(milliseconds: 1200));
     if (FirebaseAuth.instance.currentUser != null) {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_chat/models/user_model.dart';
 import 'package:app_chat/exceptions/app_error.dart';
+import 'package:app_chat/services/chat_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/app/app.logger.dart';
@@ -81,6 +82,7 @@ class UserService {
       }
       user.id = uid;
     });
+    await locator<ChatService>().init();
   }
 
   void unSetUser() {
