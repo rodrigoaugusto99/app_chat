@@ -1,5 +1,7 @@
 import 'package:app_chat/models/chat_model.dart';
 import 'package:app_chat/ui/utils/helpers.dart';
+import 'package:app_chat/ui/views/chat/chat_bubble.dart';
+import 'package:app_chat/ui/views/chat/my_chat_bubble.dart';
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 
@@ -21,6 +23,7 @@ class ChatView extends StackedView<ChatViewModel> {
     return viewModel.isBusy
         ? const Center(child: CircularProgressIndicator())
         : Scaffold(
+            //extendBody: true,
             backgroundColor: Colors.black,
             appBar: AppBar(
               // Dividindo nomes dos usuários por vírgula e exibindo imagens lado a lado
@@ -52,6 +55,10 @@ class ChatView extends StackedView<ChatViewModel> {
             ),
             //todo: carregar primeiro os mais recentes. colocar reverse.
             body: ListView.builder(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              controller: viewModel.scrollController,
               itemCount: viewModel.messages!.length,
               itemBuilder: (BuildContext context, int index) {
                 final message = viewModel.messages![index];
@@ -66,53 +73,12 @@ class ChatView extends StackedView<ChatViewModel> {
                               : MainAxisAlignment.start,
                       children: [
                         message.senderId == viewModel.myUser!.id
-                            ? Container(
-                                padding: const EdgeInsets.all(10),
-                                color: Colors.grey,
-                                child: Row(
-                                  children: [
-                                    styledText(text: message.message),
-                                    widthSeparator(10),
-                                    if (message.user!.photoUrl == '')
-                                      const Icon(
-                                        Icons.person,
-                                        size: 40,
-                                      ),
-                                    if (message.user!.photoUrl != '')
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Image.network(
-                                          message.user!.photoUrl,
-                                          height: 50,
-                                        ),
-                                      ),
-                                  ],
-                                ),
+                            ? ChatBubble(
+                                message: message,
                               )
-                            : Container(
-                                padding: const EdgeInsets.all(10),
-                                color: Colors.white,
-                                child: Row(
-                                  children: [
-                                    if (message.user!.photoUrl != '')
-                                      ClipRRect(
-                                        borderRadius:
-                                            BorderRadius.circular(100),
-                                        child: Image.network(
-                                          message.user!.photoUrl,
-                                          height: 50,
-                                        ),
-                                      ),
-                                    if (message.user!.photoUrl == '')
-                                      const Icon(
-                                        Icons.person,
-                                        size: 50,
-                                      ),
-                                    widthSeparator(10),
-                                    styledText(text: message.message),
-                                  ],
-                                ),
-                              ),
+                            : MyChatBubble(
+                                message: message,
+                              )
                       ],
                     ),
                   ),

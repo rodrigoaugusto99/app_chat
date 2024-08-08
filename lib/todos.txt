@@ -43,3 +43,12 @@ Quero com que apenas as mensagens nao sejam carregadas todas de uma vez por sing
 Ai por exemplo, quando abrir um chat, carrega tudo ou um pouco e deixa em cache pra nao precisasr carregar de novo 
 quando entrar no mesmo chat d enovo.
 
+tive uma ideia  - e se eu na vdd escutar a porra toda, por exemplo, escutar por alteracoes em todos os chats?
+mas tipo, eu nao escuto alteracoes de cada chat, ou seja, cada mensagem nova. eu escuto a query de documentos 
+de chat de um usuario. se vier um snapshot em um documento dessa query, que NAO SEJA no documento do chat que
+eu estou atualmente aberto vizualizando, ai sim abro precedentes para notificacoes (banners e numero vermelhinho.)
+(ate pq n quero notfiicacao no chat que estou atualmente olhando aberto)
+
+-ordenar as msg por data
+
+globalziar o app todo com pt_br com flutter_localizations

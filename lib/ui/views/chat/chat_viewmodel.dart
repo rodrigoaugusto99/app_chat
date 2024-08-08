@@ -16,11 +16,13 @@ class ChatViewModel extends BaseViewModel {
   ChatViewModel({
     required this.chat,
   });
+  ScrollController scrollController = ScrollController();
+
   TextEditingController controller = TextEditingController();
   final _userService = locator<UserService>();
   final _chatService = locator<ChatService>();
   final _log = getLogger('ChatViewModel');
-
+//todo: ao subir teclado, aparecer ultimas msgs normalmente
   List<UserModel>? otherUses;
 
   UserModel? myUser;
@@ -77,6 +79,7 @@ class ChatViewModel extends BaseViewModel {
       // messages!.add(messageModel);
       controller.clear();
       controller.text = '';
+      //todo: scrollar pra baixo
     } catch (e) {
       _log.e(e);
     }
@@ -98,13 +101,24 @@ class ChatViewModel extends BaseViewModel {
         //aqui posso colocar uma flag na mensagem pra dizer que eh minha, pro exemplo.
         message.user = myUser;
       } else {
-        message.user =
-            chat.users.firstWhere((element) => element.id == message.senderId);
+        message.user = chat.users.firstWhere(
+          (element) => element.id == message.senderId,
+        );
       }
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToEnd();
+    });
 
     notifyListeners();
     setChatListener();
+
     setBusy(false);
+  }
+
+  void _scrollToEnd() {
+    if (scrollController.hasClients) {
+      scrollController.jumpTo(scrollController.position.maxScrollExtent);
+    }
   }
 }

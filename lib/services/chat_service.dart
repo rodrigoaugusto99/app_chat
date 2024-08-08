@@ -76,12 +76,30 @@ class ChatService {
 
       QuerySnapshot messagesSnapshot = await chatDoc
           .collection('messages')
-          //.orderBy('createdAt', descending: true)
+          .orderBy('createdAt', descending: false)
           .get();
 
       //Map<String, dynamic> data = chatDoc.data() as Map<String, dynamic>;
 
       List<MessageModel> messages = [];
+
+      // if (snapshot.docs.isNotEmpty) {
+      //   List<QueryDocumentSnapshot> documents = snapshot.docs.toList();
+
+      //   // Ordena a lista de documentos pelo campo 'createdAt'
+      //   documents.sort((a, b) {
+      //     Timestamp timestampA = a['createdAt'];
+      //     Timestamp timestampB = b['createdAt'];
+      //     return timestampB
+      //         .compareTo(timestampA); // Ordena em ordem decrescente
+      //   });
+
+      //   // O primeiro documento da lista ordenada será o mais recente
+      //   QueryDocumentSnapshot mostRecentDocument = documents.first;
+
+      //   Map<String, dynamic> data =
+      //       mostRecentDocument.data() as Map<String, dynamic>;
+      // }
 
       // Para cada ID de chat, pega o documento correspondente na coleção 'chats'
       for (var messageDoc in messagesSnapshot.docs) {
