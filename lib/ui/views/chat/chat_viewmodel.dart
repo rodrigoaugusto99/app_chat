@@ -11,11 +11,26 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 
-class ChatViewModel extends BaseViewModel {
+class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
   final ChatModel chat;
+  BuildContext context;
   ChatViewModel({
     required this.chat,
-  });
+    required this.context,
+  }) {
+    WidgetsBinding.instance.addObserver(this);
+    // focus.addListener(() {
+    //   if (focus.hasFocus) {
+    //     _scrollToEnd();
+    //     Future.delayed(
+    //       const Duration(milliseconds: 1000),
+    //       () => _scrollToEnd(),
+    //     );
+    //   }
+    // });
+  }
+  // FocusNode focus = FocusNode();
+
   ScrollController scrollController = ScrollController();
 
   TextEditingController controller = TextEditingController();
@@ -54,7 +69,11 @@ class ChatViewModel extends BaseViewModel {
                 .firstWhere((element) => element.id == messageModel.senderId);
           }
           messages!.add(messageModel);
+
           notifyListeners();
+          Future.delayed(const Duration(milliseconds: 100), () {
+            _scrollToEnd();
+          });
         }
       }
     });
@@ -62,9 +81,43 @@ class ChatViewModel extends BaseViewModel {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    scrollController.dispose();
     super.dispose();
     if (_subscription == null) return;
     _subscription!.cancel();
+  }
+
+//chamado quando muda o tasmanhho do layout (qnd abre teclado)
+  @override
+  void didChangeMetrics() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    //apenas se a posicao atual e menor que a substracao entre o maximo e o tamanhho total
+    // if ((scrollController.position.maxScrollExtent -
+    //         scrollController.position.pixels) <
+    //     screenHeight) {
+    //   _log.e('scroll');
+    // }
+
+/*
+ao abrir o teclado, caso a distancia entre o scroll atual e o maximo de scroll possivel
+for menor que a metade da altura da tela, entao faz o scroll.
+
+ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir teclado.
+ */
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if ((scrollController.position.maxScrollExtent -
+              scrollController.position.pixels) <
+          screenHeight / 2) {
+        _scrollToEnd();
+        // scrollController.animateTo(
+        //   scrollController.position.maxScrollExtent,
+        //   duration: const Duration(milliseconds: 100),
+        //   curve: Curves.easeInOut,
+        // );
+      }
+    });
+    super.didChangeMetrics();
   }
 
   void sendMessage() async {
@@ -76,14 +129,12 @@ class ChatViewModel extends BaseViewModel {
         chatId: chat.id,
       );
 
-      // messages!.add(messageModel);
-      controller.clear();
+      // controller.clear();
       controller.text = '';
-      //todo: scrollar pra baixo
     } catch (e) {
       _log.e(e);
     }
-
+    //_scrollToEnd();
     notifyListeners();
   }
 
@@ -95,7 +146,7 @@ class ChatViewModel extends BaseViewModel {
     messages = await _chatService.getChatMessages(chat.id);
 
     if (messages == null) return; //todo: grab error
-    //todo: iterar por cada msg e inserir UserModel correspondente
+    //iterar por cada msg e inserir UserModel correspondente
     for (var message in messages!) {
       if (message.senderId == myUser!.id) {
         //aqui posso colocar uma flag na mensagem pra dizer que eh minha, pro exemplo.
@@ -106,19 +157,18 @@ class ChatViewModel extends BaseViewModel {
         );
       }
     }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToEnd();
     });
-
-    notifyListeners();
     setChatListener();
-
     setBusy(false);
   }
 
-  void _scrollToEnd() {
-    if (scrollController.hasClients) {
-      scrollController.jumpTo(scrollController.position.maxScrollExtent);
-    }
+  Future<void> _scrollToEnd() async {
+    scrollController.jumpTo(scrollController.position.maxScrollExtent);
+    _log.i('');
+    // await Future.delayed(const Duration(milliseconds: 500));
+    // _scrollToEnd();
   }
 }

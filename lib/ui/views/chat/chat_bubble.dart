@@ -14,35 +14,43 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const datePattern = 'dd MMM yyyy, HH:mm';
-    final timestampFormatted = DateFormat('dd MMM yyyy, HH:mm', 'pt_BR')
-        .format(message.createdAt.toDate());
+    const datePattern = /*'dd MMM yyyy, */ 'HH:mm';
+    final timestampFormatted =
+        DateFormat('HH:mm', 'pt_BR').format(message.createdAt.toDate());
     return decContainer(
       allPadding: 10,
       radius: 12,
-      color: Colors.grey,
+      color: Colors.grey[800],
       child: Column(
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              styledText(text: message.message),
+              styledText(
+                  text: message.message, color: Colors.white, fontSize: 18),
               widthSeparator(10),
-              if (message.user!.photoUrl == '')
-                const Icon(
-                  Icons.person,
-                  size: 40,
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: styledText(
+                  text: timestampFormatted,
+                  color: Colors.white70,
                 ),
-              if (message.user!.photoUrl != '')
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    message.user!.photoUrl,
-                    height: 50,
-                  ),
-                ),
+              )
+              // if (message.user!.photoUrl == '')
+              //   const Icon(
+              //     Icons.person,
+              //     size: 40,
+              //   ),
+              // if (message.user!.photoUrl != '')
+              //   ClipRRect(
+              //     borderRadius: BorderRadius.circular(12),
+              //     child: Image.network(
+              //       message.user!.photoUrl,
+              //       height: 50,
+              //     ),
+              //   ),
             ],
           ),
-          styledText(text: timestampFormatted)
         ],
       ),
     );

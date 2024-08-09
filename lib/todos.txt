@@ -52,3 +52,12 @@ eu estou atualmente aberto vizualizando, ai sim abro precedentes para notificaco
 -ordenar as msg por data
 
 globalziar o app todo com pt_br com flutter_localizations
+
+possibilidade de arrastar mensagem do outro (ou propria) para reesponder
+
+tirar TUDO que se refere a firebase dos viemodels. firebase APENAS nos services.
+
+botao no chat pra descer ate o final
+
+averiguar que no wpp, o lance do teclado eh rapido pq:
+parece que o teclado so sobe depois que o scroll ja foi preestabelecido.
