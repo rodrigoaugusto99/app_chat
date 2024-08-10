@@ -9,6 +9,16 @@ import 'package:app_chat/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 
+class MessagesByDay {
+  final String day;
+  final List<MessageModel> messages;
+
+  MessagesByDay({
+    required this.day,
+    required this.messages,
+  });
+}
+
 class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
   final ChatModel chat;
   BuildContext context;
@@ -17,6 +27,7 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
     required this.context,
   }) {
     WidgetsBinding.instance.addObserver(this);
+    screenHeight = MediaQuery.of(context).size.height;
     //issso eh pra notificar os ouvintes qnd essa variavel do chharswervice atualizar
     // _chatService.actualChatMessages.addListener(() {
     //   notifyListeners();
@@ -45,48 +56,23 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
 //todo: ao subir teclado, aparecer ultimas msgs normalmente
   List<UserModel>? otherUses;
   List<MessageModel>? messages;
+  List<MessagesByDay>? messagesGroupedByDays;
   UserModel? myUser;
   StreamSubscription? _subscription;
-
-//   Future<void> setChatListener() async {
-//     //ouvindo a query de documentos desse chats
-//     final query = FirebaseFirestore.instance
-//         .collection('chats')
-//         .doc(chat.id)
-//         .collection('messages');
-
-// //instanciando a subscription
-//     _subscription = query.snapshots().skip(1).listen((querySnapshot) async {
-//       _log.i("New message snapshot received");
-
-//       if (querySnapshot.docs.isEmpty) return;
-
-// //averiguar se aqui so vem um por um mesmo
-//       for (var change in querySnapshot.docChanges) {
-//         if (change.type == DocumentChangeType.added) {
-//           final messageModel = MessageModel.fromDocument(change.doc);
-// //atribuindo o user na mensagem
-//           if (messageModel.senderId == myUser!.id) {
-//             messageModel.user = myUser;
-//           } else {
-//             messageModel.user = chat.users
-//                 .firstWhere((element) => element.id == messageModel.senderId);
-//           }
-//           messages!.add(messageModel);
-
-//           notifyListeners();
-//           Future.delayed(const Duration(milliseconds: 100), () {
-//             _scrollToEnd();
-//           });
-//         }
-//       }
-//     });
-//   }
+  double? screenHeight;
+//!
+//!vou precisar fzr funcao de voltar manualmente pro back do appbar e pro willpop
+//!pois preciso dar dispose no scroll muito rapido pra evitar
+//!dessa forma, evita o erro no terminal talvez
+  // void back() {
+  //   _navigationService.back();
+  // }
 
   @override
   void dispose() {
+    //scrollController.dispose();
     WidgetsBinding.instance.removeObserver(this);
-    scrollController.dispose();
+
     super.dispose();
     if (_subscription == null) return;
     _subscription!.cancel();
@@ -95,14 +81,16 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
 //chamado quando muda o tasmanhho do layout (qnd abre teclado)
   @override
   void didChangeMetrics() {
-    final screenHeight = MediaQuery.of(context).size.height;
+    //pra isso nao chamar quando eu sair da tela, dar dipose no controller e chamar o didChangeMetrics pois o teclado esta visivel
+    // if (!scrollController.hasListeners) return;
+
     //apenas se a posicao atual e menor que a substracao entre o maximo e o tamanhho total
     // if ((scrollController.position.maxScrollExtent -
     //         scrollController.position.pixels) <
     //     screenHeight) {
     //   _log.e('scroll');
     // }
-
+    if (!scrollController.hasClients) return;
 /*
 ao abrir o teclado, caso a distancia entre o scroll atual e o maximo de scroll possivel
 for menor que a metade da altura da tela, entao faz o scroll.
@@ -112,7 +100,7 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if ((scrollController.position.maxScrollExtent -
               scrollController.position.pixels) <
-          screenHeight / 2) {
+          (screenHeight! / 2)) {
         _scrollToEnd();
         // scrollController.animateTo(
         //   scrollController.position.maxScrollExtent,
@@ -143,7 +131,9 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
   }
 
   Future<void> init() async {
+    WidgetsBinding.instance.addObserver(this);
     setBusy(true);
+
     myUser = _userService.user;
 
     //todo: load messages //todo: insert on some cache
@@ -164,26 +154,78 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
       }
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToEnd();
-    });
+    //messagesGroupedByDays = createExtractDayList(messages!.reversed.toList());
+    messagesGroupedByDays = createExtractDayList(messages);
+
     notifyListeners();
     _chatService.setChatListener(chat, (newMessage) {
-      // actualChatMessages.value.add(newMessage);
+      //adicionando a nova mensagem na lista de mensagens do MessagesByModel de HOJE.
+      DateTime now = DateTime.now();
+      String nowFormatted = _formatDate(now);
+      MessagesByDay todayMessages =
+          messagesGroupedByDays!.firstWhere((msg) => msg.day == nowFormatted);
       messages!.add(newMessage);
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _scrollToEnd();
-      });
+
+      // Se o grupo do dia de hoje existe, adicione a nova mensagem a ele
+      todayMessages.messages.add(newMessage);
+
+      // Future.delayed(const Duration(milliseconds: 100), () {
+      //   _scrollToEnd();
+      // });
       notifyListeners();
     });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   Future.delayed(const Duration(milliseconds: 400), () {
+    //     _scrollToEnd();
+    //   });
+    // });
     setBusy(false);
   }
 
   Future<void> _scrollToEnd() async {
+    if (!scrollController.hasClients) return;
+    //if (!scrollController.hasListeners) return;
     scrollController.jumpTo(scrollController.position.maxScrollExtent);
     _log.i('');
     // await Future.delayed(const Duration(milliseconds: 500));
     // _scrollToEnd();
+  }
+
+  List<MessagesByDay> createExtractDayList(List<MessageModel>? allMessages) {
+    if (allMessages == null || allMessages.isEmpty) {
+      return [];
+    }
+
+    Map<String, List<MessageModel>> groupedByDate = {};
+
+    for (var msg in allMessages) {
+      DateTime date = msg.createdAt.toDate();
+      String formattedDate = _formatDate(date);
+
+      if (!groupedByDate.containsKey(formattedDate)) {
+        groupedByDate[formattedDate] = [];
+      }
+
+      groupedByDate[formattedDate]!.add(msg);
+    }
+
+    List<MessagesByDay> extractDays = groupedByDate.entries.map((entry) {
+      return MessagesByDay(
+        day: entry.key,
+        messages: entry.value,
+      );
+    }).toList();
+
+    return extractDays;
+  }
+
+  // String formatDate(DateTime date) {
+  //   DateFormat dateFormat = DateFormat('EEEE, dd/MM/yyyy', 'pt_BR');
+  //   return dateFormat.format(date);
+  // }
+
+  String _formatDate(DateTime date) {
+    return "${date.day}/${date.month}/${date.year}";
   }
 }
 

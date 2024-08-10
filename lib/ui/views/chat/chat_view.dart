@@ -55,7 +55,8 @@ class ChatView extends StackedView<ChatViewModel> {
                     ),
                     widthSeparator(10),
                     styledText(
-                      text: chat.users.map((user) => user.name).join(', '),
+                      //text: chat.users.map((user) => user.name).join(', '),
+                      text: chat.chatName,
                       overflow: TextOverflow.ellipsis,
                       fontSize: 22,
                     ),
@@ -82,35 +83,83 @@ class ChatView extends StackedView<ChatViewModel> {
               children: [
                 Expanded(
                   child: ListView.builder(
+                    reverse: true,
                     padding: const EdgeInsets.only(bottom: 3),
                     //physics: const NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
                     controller: viewModel.scrollController,
-                    itemCount: viewModel.messages!.length,
+                    itemCount: viewModel.messagesGroupedByDays!.length,
                     itemBuilder: (BuildContext context, int index) {
-                      final message = viewModel.messages![index];
-                      return decContainer(
-                        leftPadding: 10,
-                        rightPadding: 10,
-                        topPadding: 3,
-                        child: Row(
-                          mainAxisAlignment:
-                              message.senderId == viewModel.myUser!.id
-                                  ? MainAxisAlignment.end
-                                  : MainAxisAlignment.start,
-                          children: [
-                            message.senderId == viewModel.myUser!.id
-                                ? MyChatBubble(
-                                    message: message,
-                                  )
-                                : ChatBubble(
-                                    message: message,
-                                  )
-                          ],
-                        ),
+                      //final message = viewModel.messages![index];
+
+                      //REVERSE
+                      final messagesByDay = viewModel
+                          .messagesGroupedByDays!.reversed
+                          .toList()[index];
+                      return Column(
+                        children: [
+                          styledText(
+                            text: messagesByDay.day,
+                            color: Colors.white,
+                            fontSize: 24,
+                          ),
+                          ...messagesByDay.messages.map<Widget>((message) {
+                            return decContainer(
+                              leftPadding: 10,
+                              rightPadding: 10,
+                              topPadding: 3,
+                              child: Row(
+                                mainAxisAlignment:
+                                    message.senderId == viewModel.myUser!.id
+                                        ? MainAxisAlignment.end
+                                        : MainAxisAlignment.start,
+                                children: [
+                                  message.senderId == viewModel.myUser!.id
+                                      ? MyChatBubble(
+                                          message: message,
+                                        )
+                                      : ChatBubble(
+                                          message: message,
+                                        )
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ],
                       );
                     },
                   ),
+                  // Expanded(
+                  //   child: ListView.builder(
+                  //     padding: const EdgeInsets.only(bottom: 3),
+                  //     //physics: const NeverScrollableScrollPhysics(),
+                  //     shrinkWrap: true,
+                  //     controller: viewModel.scrollController,
+                  //     itemCount: viewModel.messages!.length,
+                  //     itemBuilder: (BuildContext context, int index) {
+                  //       final message = viewModel.messages![index];
+                  //       return decContainer(
+                  //         leftPadding: 10,
+                  //         rightPadding: 10,
+                  //         topPadding: 3,
+                  //         child: Row(
+                  //           mainAxisAlignment:
+                  //               message.senderId == viewModel.myUser!.id
+                  //                   ? MainAxisAlignment.end
+                  //                   : MainAxisAlignment.start,
+                  //           children: [
+                  //             message.senderId == viewModel.myUser!.id
+                  //                 ? MyChatBubble(
+                  //                     message: message,
+                  //                   )
+                  //                 : ChatBubble(
+                  //                     message: message,
+                  //                   )
+                  //           ],
+                  //         ),
+                  //       );
+                  //     },
+                  //   ),
                 ),
                 decContainer(
                   // height: MediaQuery.of(context).viewInsets.bottom + 60,

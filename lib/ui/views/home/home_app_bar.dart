@@ -16,7 +16,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 24),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
         child: Row(
           children: [
             if (imageNetwork != '')
@@ -26,6 +26,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             widthSeparator(24),
             styledText(
+              color: Colors.white,
               text: title,
               fontWeight: FontWeight.bold,
               fontSize: 26,
@@ -33,7 +34,10 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
             const Spacer(),
             GestureDetector(
               onTap: onTap,
-              child: const Icon(Icons.logout),
+              child: const Icon(
+                Icons.logout,
+                color: Colors.white,
+              ),
             ),
           ],
         ),
@@ -42,5 +46,5 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(76);
+  Size get preferredSize => const Size.fromHeight(86);
 }

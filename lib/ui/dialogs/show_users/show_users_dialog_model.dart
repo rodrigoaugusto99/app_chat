@@ -24,6 +24,8 @@ class ShowUsersDialogModel extends BaseViewModel {
     //todo: que vieram dos services pra poder exibir ao usuario.
     final chatModel = await _chatService.createOrGetChat(receiverId);
     //navega pro chat criado ou recuperado.
+
+    //todo: wtf? se eu navegar, depois voltar, e ainda estiver esse dialog aberto e eu clicar aqui dnv, esse nav n funfa
     _navigationService.navigateToChatView(chat: chatModel);
   }
 }

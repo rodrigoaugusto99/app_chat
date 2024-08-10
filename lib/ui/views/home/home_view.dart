@@ -26,24 +26,85 @@ class HomeView extends StackedView<HomeViewModel> {
               title: viewModel.user!.name,
               onTap: viewModel.logout,
             ),
-            backgroundColor: Colors.grey,
-            body: Center(
-              child: ListView.separated(
-                itemCount: viewModel.chats!.length,
-                itemBuilder: (BuildContext context, int index) {
-                  final chat = viewModel.chats![index];
-                  return decContainer(
+            backgroundColor: Colors.grey[900],
+            body: ListView.separated(
+              itemCount: viewModel.chats!.length,
+              itemBuilder: (BuildContext context, int index) {
+                final chat = viewModel.chats![index];
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: decContainer(
+                    allPadding: 10,
+                    // color: Colors.blue,
                     onTap: () => viewModel.navToChat(chat),
-                    child: styledText(text: chat.chatName),
-                    height: 50,
-                    color: Colors.blueGrey,
-                    // child: styledText(text: chat.n)
-                  );
-                },
-                separatorBuilder: (BuildContext context, int index) {
-                  return const SizedBox(height: 10);
-                },
-              ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: chat.users
+                              .map(
+                                (user) => decContainer(
+                                  radius: 100,
+                                  child: Image.network(
+                                    user.photoUrl,
+                                    height: 50,
+                                    width: 50,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                        widthSeparator(10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              styledText(
+                                height: 0.8,
+                                color: Colors.white,
+                                //text: chat.users.map((user) => user.name).join(', '),
+                                text: chat.chatName,
+                                overflow: TextOverflow.ellipsis,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              styledText(
+                                height: 2,
+                                text: 'conteudo da utlima mensagemmmmmmmm',
+                                overflow: TextOverflow.ellipsis,
+                                fontSize: 16,
+                                color: Colors.grey[600],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          children: [
+                            styledText(
+                              text: '00:00',
+                              height: 0.5,
+                              color: Colors.grey[600],
+                            ),
+                            heightSeparator(10),
+                            decContainer(
+                              allPadding: 5,
+                              radius: 10,
+                              color: const Color(0xff128c7e),
+                              child: styledText(
+                                text: '99',
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
+                );
+              },
+              separatorBuilder: (BuildContext context, int index) {
+                return const SizedBox(height: 10);
+              },
             ),
           );
   }

@@ -60,6 +60,16 @@ tirar TUDO que se refere a firebase dos viemodels. firebase APENAS nos services.
 botao no chat pra descer ate o final
 
 averiguar que no wpp, o lance do teclado eh rapido pq:
+
 parece que o teclado so sobe depois que o scroll ja foi preestabelecido.
 
 usar groupedListyvierw.
+
+parece que o teclado so sobe depois que o scroll ja foi preestabelecido.\
+
+ja quie as mensagens mais recentes sao prioridades para pegar do banco, entao,
+e se a gente fizesse um orderBy ao contrario pegando os mais recentes, e tbm
+fazxendo com que o listviewbuilder listasse as coisas de baixo pra cima, ou seja, nao teria aquele problema de ,
+ao entrar no chat, ter que rolar ate o fim da listview. ou tbm, talvez isso automatize o lance de, ao enviar ou
+receber nvoa mensagens, ter aquela subidinha no scroll.
+

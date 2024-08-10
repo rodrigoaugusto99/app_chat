@@ -104,6 +104,29 @@ class ChatService {
     }
   }
 
+  //set chats names
+  String setChatName(ChatModel chat) {
+    String chatName = '';
+    //iterando por todos os usuarios de cada chhat
+    for (var user in chat.users) {
+      int count = 0;
+      //quando chegar no meu usuario, ignorar
+      if (user.id == _userService.user.id) continue;
+      //se tem so um usuario, entao eh um chat cmg e outra pessoa (2 pessoas)
+      if (chat.users.length == 1) {
+        chatName += user.name;
+        //se tem mais de uma pessoa, entao sao 3 (contando cmg). Entao o nome do chat sao todos eles (menos eu)
+      } else if (chat.userIds.length > 1) {
+        chatName += count == 0 ? user.name : ', ${user.name}';
+        count++;
+      } else {
+        _log.e('nao deveria ter entrado aqui');
+      }
+    }
+    chat.chatName = chatName;
+    return chatName;
+  }
+
 //?load user chats
   Future<List<ChatModel>> getUserChats() async {
     // Referência para o Firestore
@@ -131,6 +154,8 @@ class ChatService {
           final userModel = await FirestoreUtils.getUserModelById(userId);
           chatModel.users.add(userModel);
         }
+        chatModel.chatName = setChatName(chatModel);
+
         chats.add(chatModel);
       }
       //todo: ja recuperar as msgs tbm e colocar um atributo de lista de msg nesse model de chat?
