@@ -61,3 +61,5 @@ botao no chat pra descer ate o final
 
 averiguar que no wpp, o lance do teclado eh rapido pq:
 parece que o teclado so sobe depois que o scroll ja foi preestabelecido.
+
+usar groupedListyvierw.

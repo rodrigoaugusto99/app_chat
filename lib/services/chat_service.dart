@@ -9,6 +9,7 @@ import 'package:app_chat/models/user_model.dart';
 import 'package:app_chat/services/user_service.dart';
 import 'package:app_chat/ui/utils/firestore_utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:stacked_services/stacked_services.dart';
 
 class ChatService {
@@ -21,6 +22,86 @@ class ChatService {
 
   Future<void> init() async {
     _chats = await getUserChats();
+  }
+
+  StreamSubscription? _actualChatSubscription;
+  //! eh necessario isso? eu sei que o getter faz com que a gente pegue sempre
+  //! o valor 100% atualizado. Mas precisa disso nesse caso?
+
+  //! alem do mais, aproveitar e entender melhor esse lance do getter ser atualizado.
+  StreamSubscription? get actualChatSubscription => _actualChatSubscription;
+
+  //todo: usar value notifier pra usar addlistenrl a no viewmodel?
+
+  // ValueNotifier<List<MessageModel>> actualChatMessages = ValueNotifier([]);
+
+//? criando um listener pro chat ATUAL.
+  Future<void> setChatListener(
+      ChatModel chat, void Function(MessageModel) onNewMessage) async {
+    //ouvindo a query de documentos desse chats
+    final query = FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chat.id)
+        .collection('messages');
+
+//instanciando a subscription
+//o skip 1  pula a primeira leva de snapshot, que eh TODAS as mensagens
+    _actualChatSubscription =
+        query.snapshots().skip(1).listen((querySnapshot) async {
+      _log.i("New message snapshot received");
+
+      if (querySnapshot.docs.isEmpty) return;
+
+//averiguar se aqui so vem um por um mesmo
+      for (var change in querySnapshot.docChanges) {
+        if (change.type == DocumentChangeType.added) {
+          final messageModel = MessageModel.fromDocument(change.doc);
+//atribuindo o user na mensagem
+          if (messageModel.senderId == _userService.user.id) {
+            messageModel.user = _userService.user;
+          } else {
+            messageModel.user = chat.users
+                .firstWhere((element) => element.id == messageModel.senderId);
+          }
+          //actualChatMessages.value.add(messageModel);
+          onNewMessage(messageModel);
+
+          // Future.delayed(const Duration(milliseconds: 100), () {
+          //   _scrollToEnd();
+          // });
+        }
+      }
+    });
+  }
+
+  Future<List<MessageModel>> getMessages(String chatId) async {
+    // Referência para o Firestore
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    try {
+      // Referência para a subcollection 'chats'
+      CollectionReference messagesRef =
+          firestore.collection('chats').doc(chatId).collection('messages');
+      QuerySnapshot messagesSnapshot =
+          await messagesRef.orderBy('createdAt', descending: true).get();
+
+      if (messagesSnapshot.docs.isEmpty) {
+        return [];
+      }
+
+      List<MessageModel> messages = [];
+
+      for (var message in messagesSnapshot.docs) {
+        //todo: if message does not existe, send some default error message to show on the place of old lost message.
+        final messageModel = MessageModel.fromDocument(message);
+        messages.add(messageModel);
+      }
+
+      return messages;
+    } catch (e) {
+      _log.i('Erro ao enviar a mensagem: $e');
+      throw Exception('Erro desconhecido');
+    }
   }
 
 //?load user chats
@@ -194,36 +275,6 @@ class ChatService {
       return MessageModel.fromMap(messageDoc);
     } on Exception catch (e) {
       throw AppError(message: e.toString());
-    }
-  }
-
-  Future<List<MessageModel>> getMessages(String chatId) async {
-    // Referência para o Firestore
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    try {
-      // Referência para a subcollection 'chats'
-      CollectionReference messagesRef =
-          firestore.collection('chats').doc(chatId).collection('messages');
-      QuerySnapshot messagesSnapshot =
-          await messagesRef.orderBy('createdAt', descending: true).get();
-
-      if (messagesSnapshot.docs.isEmpty) {
-        return [];
-      }
-
-      List<MessageModel> messages = [];
-
-      for (var message in messagesSnapshot.docs) {
-        //todo: if message does not existe, send some default error message to show on the place of old lost message.
-        final messageModel = MessageModel.fromDocument(message);
-        messages.add(messageModel);
-      }
-
-      return messages;
-    } catch (e) {
-      _log.i('Erro ao enviar a mensagem: $e');
-      throw Exception('Erro desconhecido');
     }
   }
 }

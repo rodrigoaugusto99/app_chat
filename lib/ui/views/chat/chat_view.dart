@@ -30,7 +30,7 @@ class ChatView extends StackedView<ChatViewModel> {
               // toolbarHeight: 77,
               leadingWidth: 40,
               foregroundColor: Colors.white,
-              backgroundColor: Colors.black54,
+              backgroundColor: Colors.grey[900],
               // Dividindo nomes dos usuários por vírgula e exibindo imagens lado a lado
               title: Padding(
                 padding: const EdgeInsets.symmetric(
