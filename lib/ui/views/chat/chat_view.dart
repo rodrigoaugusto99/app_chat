@@ -83,6 +83,7 @@ class ChatView extends StackedView<ChatViewModel> {
               children: [
                 Expanded(
                   child: ListView.builder(
+                    //REVERSE
                     reverse: true,
                     padding: const EdgeInsets.only(bottom: 3),
                     //physics: const NeverScrollableScrollPhysics(),

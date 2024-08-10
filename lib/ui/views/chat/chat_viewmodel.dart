@@ -90,23 +90,29 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
     //     screenHeight) {
     //   _log.e('scroll');
     // }
-    if (!scrollController.hasClients) return;
+    //if (!scrollController.hasClients) return;
 /*
 ao abrir o teclado, caso a distancia entre o scroll atual e o maximo de scroll possivel
 for menor que a metade da altura da tela, entao faz o scroll.
 
 ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir teclado.
  */
+
+//se scroll positionf for um pouco maior que o minimi
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if ((scrollController.position.maxScrollExtent -
-              scrollController.position.pixels) <
-          (screenHeight! / 2)) {
+      // if ((scrollController.position.minScrollExtent -
+      //         scrollController.position.pixels) <
+      //     (screenHeight! / 2)) {
+      //   _scrollToEnd();
+      //   // scrollController.animateTo(
+      //   //   scrollController.position.maxScrollExtent,
+      //   //   duration: const Duration(milliseconds: 100),
+      //   //   curve: Curves.easeInOut,
+      //   // );
+      // }
+      //condicao pro scroll da lista ir la pra baixo
+      if ((screenHeight! / 2) > scrollController.position.pixels) {
         _scrollToEnd();
-        // scrollController.animateTo(
-        //   scrollController.position.maxScrollExtent,
-        //   duration: const Duration(milliseconds: 100),
-        //   curve: Curves.easeInOut,
-        // );
       }
     });
     super.didChangeMetrics();
@@ -169,6 +175,7 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
       // Se o grupo do dia de hoje existe, adicione a nova mensagem a ele
       todayMessages.messages.add(newMessage);
 
+//nao precisa mais de descer o scroll a cada nova msg pq agr a listview ta reversa, entao ela autoajusta pro inicio
       // Future.delayed(const Duration(milliseconds: 100), () {
       //   _scrollToEnd();
       // });
@@ -185,7 +192,7 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
   Future<void> _scrollToEnd() async {
     if (!scrollController.hasClients) return;
     //if (!scrollController.hasListeners) return;
-    scrollController.jumpTo(scrollController.position.maxScrollExtent);
+    scrollController.jumpTo(scrollController.position.minScrollExtent);
     _log.i('');
     // await Future.delayed(const Duration(milliseconds: 500));
     // _scrollToEnd();
