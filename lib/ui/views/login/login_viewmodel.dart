@@ -1,11 +1,9 @@
 import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/app/app.logger.dart';
 import 'package:app_chat/app/app.router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 import 'package:stacked_services/stacked_services.dart';
-
 import '../../../services/auth_service.dart';
 
 class LoginViewModel extends BaseViewModel {

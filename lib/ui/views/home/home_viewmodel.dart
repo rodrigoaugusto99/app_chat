@@ -1,4 +1,3 @@
-import 'package:app_chat/app/app.bottomsheets.dart';
 import 'package:app_chat/app/app.dialogs.dart';
 import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/app/app.logger.dart';
@@ -8,8 +7,6 @@ import 'package:app_chat/models/user_model.dart';
 import 'package:app_chat/services/auth_service.dart';
 import 'package:app_chat/services/chat_service.dart';
 import 'package:app_chat/services/user_service.dart';
-import 'package:app_chat/ui/common/app_strings.dart';
-import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 import 'package:stacked_services/stacked_services.dart';
 
