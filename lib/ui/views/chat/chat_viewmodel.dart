@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/app/app.logger.dart';
 import 'package:app_chat/models/chat_model.dart';
@@ -7,6 +8,8 @@ import 'package:app_chat/models/user_model.dart';
 import 'package:app_chat/services/chat_service.dart';
 import 'package:app_chat/services/user_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_sound/public/flutter_sound_recorder.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:stacked/stacked.dart';
 
 class MessagesByDay {
@@ -28,6 +31,7 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
   }) {
     WidgetsBinding.instance.addObserver(this);
     screenHeight = MediaQuery.of(context).size.height;
+
     //issso eh pra notificar os ouvintes qnd essa variavel do chharswervice atualizar
     // _chatService.actualChatMessages.addListener(() {
     //   notifyListeners();
@@ -139,7 +143,7 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
   Future<void> init() async {
     WidgetsBinding.instance.addObserver(this);
     setBusy(true);
-
+    initRecorder();
     myUser = _userService.user;
 
     //todo: load messages //todo: insert on some cache
@@ -234,7 +238,62 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
   String _formatDate(DateTime date) {
     return "${date.day}/${date.month}/${date.year}";
   }
+
+  void onChanged(String value) {
+    if (controller.text.isEmpty) {
+      canRecord = true;
+    } else {
+      canRecord = false;
+    }
+    notifyListeners();
+  }
+
+//-------------audio recording ---------------
+
+  final recorder = FlutterSoundRecorder();
+  bool canRecord = true;
+  bool isRecorderReady = false;
+
+  Future<void> initRecorder() async {
+    var status = await Permission.microphone.request();
+
+    if (status != PermissionStatus.granted) {
+      throw Exception('Microphone permission not granted');
+    }
+
+    await recorder.openRecorder();
+
+    isRecorderReady = true;
+
+    recorder.setSubscriptionDuration(const Duration(milliseconds: 500));
+  }
+
+  void recordVoice() async {
+    bool isGranted = await Permission.microphone.isGranted;
+    if (isGranted == false) {
+      try {
+        initRecorder();
+      } on Exception catch (e) {
+        _log.e(e);
+        return;
+      }
+    }
+    if (!isRecorderReady) return;
+    if (recorder.isRecording) {
+      //await stop();
+      final path = await recorder.stopRecorder();
+      final audioFile = File(path!);
+
+      _log.i('recorded audio: $audioFile');
+    } else {
+      // await record();
+      await recorder.startRecorder(toFile: 'audio');
+    }
+    notifyListeners();
+  }
 }
+
+
 
 /*
 Aqui para tirar a dependencia do firestore no viewmodel, eu coloquei o listener la no service.

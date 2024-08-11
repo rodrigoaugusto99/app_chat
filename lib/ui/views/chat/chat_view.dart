@@ -3,6 +3,7 @@ import 'package:app_chat/ui/utils/helpers.dart';
 import 'package:app_chat/ui/views/chat/chat_bubble.dart';
 import 'package:app_chat/ui/views/chat/my_chat_bubble.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_sound/flutter_sound.dart';
 import 'package:stacked/stacked.dart';
 
 import 'chat_viewmodel.dart';
@@ -174,6 +175,7 @@ class ChatView extends StackedView<ChatViewModel> {
                       Expanded(
                         flex: 5,
                         child: TextField(
+                          onChanged: (_) => viewModel.onChanged,
                           cursorColor: Colors.white,
                           style: const TextStyle(color: Colors.white),
                           decoration: const InputDecoration(
@@ -183,11 +185,37 @@ class ChatView extends StackedView<ChatViewModel> {
                         ),
                       ),
                       Expanded(
-                        child: GestureDetector(
-                          onTap: viewModel.sendMessage,
-                          child: const Icon(
-                            Icons.send,
-                          ),
+                        child: Column(
+                          children: [
+                            if (viewModel.recorder.isRecording)
+                              StreamBuilder<RecordingDisposition>(
+                                stream: viewModel.recorder.onProgress,
+                                builder: (context, snapshot) {
+                                  final duration = snapshot.hasData
+                                      ? snapshot.data!.duration
+                                      : Duration.zero;
+                                  // Converte a duração para minutos e segundos
+                                  String twoDigits(int n) =>
+                                      n.toString().padLeft(2, '0');
+                                  final minutes = twoDigits(
+                                      duration.inMinutes.remainder(60));
+                                  final seconds = twoDigits(
+                                      duration.inSeconds.remainder(60));
+
+                                  return styledText(
+                                    text: '$minutes:$seconds',
+                                  );
+                                },
+                              ),
+                            GestureDetector(
+                              onTap: viewModel.canRecord
+                                  ? viewModel.recordVoice
+                                  : viewModel.sendMessage,
+                              child: Icon(
+                                viewModel.canRecord ? Icons.mic : Icons.send,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
