@@ -5,13 +5,15 @@ class MessageModel {
   String? id;
   String senderId;
   UserModel? user;
-  String message;
+  String? message;
+  String? audioUrl;
   Timestamp createdAt;
   MessageModel({
     this.id,
     this.user,
     required this.senderId,
-    required this.message,
+    this.message,
+    this.audioUrl,
     required this.createdAt,
   });
 
@@ -20,6 +22,7 @@ class MessageModel {
       id: doc.id,
       senderId: doc['senderId'],
       message: doc['message'],
+      audioUrl: doc['audioUrl'],
       createdAt: doc['createdAt'],
     );
   }
@@ -29,6 +32,7 @@ class MessageModel {
       senderId: map['senderId'],
       message: map['message'],
       createdAt: map['createdAt'],
+      audioUrl: map['audioUrl'],
     );
   }
 

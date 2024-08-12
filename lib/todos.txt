@@ -73,3 +73,7 @@ fazxendo com que o listviewbuilder listasse as coisas de baixo pra cima, ou seja
 ao entrar no chat, ter que rolar ate o fim da listview. ou tbm, talvez isso automatize o lance de, ao enviar ou
 receber nvoa mensagens, ter aquela subidinha no scroll.
 
+fzr migracao de dados e logicas pro mongodb
+
+
+vai ter um widget especifico pra mensagem, pra foto, pra foto com mensagem, pra voz, etc.

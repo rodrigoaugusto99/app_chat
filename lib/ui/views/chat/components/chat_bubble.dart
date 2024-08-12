@@ -27,7 +27,7 @@ class ChatBubble extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               styledText(
-                  text: message.message, color: Colors.white, fontSize: 18),
+                  text: message.message!, color: Colors.white, fontSize: 18),
               widthSeparator(10),
               Align(
                 alignment: Alignment.bottomCenter,

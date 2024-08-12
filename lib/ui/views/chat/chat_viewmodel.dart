@@ -7,10 +7,12 @@ import 'package:app_chat/models/message_model.dart';
 import 'package:app_chat/models/user_model.dart';
 import 'package:app_chat/services/chat_service.dart';
 import 'package:app_chat/services/user_service.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:stacked/stacked.dart';
+import 'package:http/http.dart' as http;
 
 class MessagesByDay {
   final String day;
@@ -122,24 +124,6 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     super.didChangeMetrics();
   }
 
-  void sendMessage() async {
-    if (controller.text.isEmpty) return;
-
-    try {
-      await _chatService.sendMessage(
-        message: controller.text,
-        chatId: chat.id,
-      );
-
-      // controller.clear();
-      controller.text = '';
-    } catch (e) {
-      _log.e(e);
-    }
-    //_scrollToEnd();
-    notifyListeners();
-  }
-
   Future<void> init() async {
     WidgetsBinding.instance.addObserver(this);
     setBusy(true);
@@ -248,7 +232,48 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     notifyListeners();
   }
 
+  // Future<void> sendText() async {
+  //   if (controller.text.isEmpty) return;
+  //   await _chatService.sendMessage(
+  //     message: controller.text,
+  //     chatId: chat.id,
+  //   );
+  // }
+
+  // Future<void> sendAudio() async {
+  //   if (controller.text.isEmpty) return;
+  //   await _chatService.sendMessage(
+  //     message: controller.text,
+  //     chatId: chat.id,
+  //   );
+  // }
+
+  void sendMessage({String? audioUrl}) async {
+    //if (controller.text.isEmpty) return;
+    try {
+      // sendText();
+      await _chatService.sendMessage(
+        message: controller.text,
+        chatId: chat.id,
+        audioUrl: audioUrl,
+      );
+      // controller.clear();
+      controller.text = '';
+    } catch (e) {
+      _log.e(e);
+    }
+    //_scrollToEnd();
+    notifyListeners();
+  }
+
 //-------------audio recording ---------------
+
+//todo: download audio com http ou com downloadUrl do firebase storage msm
+// Future<File> downloadAudio(String url, String savePath) async {
+//   var response = await http.get(Uri.parse(url));
+//   File file = File(savePath);
+//   return file.writeAsBytes(response.bodyBytes);
+// }
 
   final recorder = FlutterSoundRecorder();
   bool canRecord = true;
@@ -280,9 +305,17 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     }
     if (!isRecorderReady) return;
     if (recorder.isRecording) {
-      //await stop();
+//parando de gravar
       final path = await recorder.stopRecorder();
       final audioFile = File(path!);
+
+      try {
+        //upload do arquivo de voz no storage
+        final audioUrl = await uploadAudioFile(path);
+        sendMessage(audioUrl: audioUrl);
+      } on Exception catch (e) {
+        throw Exception(e);
+      }
 
       _log.i('recorded audio: $audioFile');
     } else {
@@ -290,6 +323,28 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
       await recorder.startRecorder(toFile: 'audio');
     }
     notifyListeners();
+  }
+
+  Future<String> uploadAudioFile(String filePath) async {
+    File file = File(filePath);
+    try {
+      // Nome do arquivo no Firebase Storage
+      String fileName = "${DateTime.now().millisecondsSinceEpoch}.aac";
+
+      // Pasta onde o arquivo será armazenado (por exemplo, 'audios/')
+      Reference ref = FirebaseStorage.instance.ref().child('audios/$fileName');
+
+      // Upload do arquivo
+      UploadTask uploadTask = ref.putFile(file);
+      TaskSnapshot taskSnapshot = await uploadTask;
+
+      // Recupera a URL pública do arquivo armazenado
+      String downloadUrl = await taskSnapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      _log.e('Erro ao fazer upload do áudio: $e');
+      throw Exception('Erro ao fazer upload do áudio: $e');
+    }
   }
 }
 

@@ -30,6 +30,7 @@ Widget decContainer({
   BoxShadow? boxShadow,
   EdgeInsetsGeometry? margin,
   Alignment? alignment,
+  Clip clipBehavior = Clip.antiAlias,
 }) {
   return GestureDetector(
     behavior: HitTestBehavior.translucent,
@@ -37,7 +38,7 @@ Widget decContainer({
     child: Container(
       alignment: alignment,
       margin: margin,
-      clipBehavior: Clip.antiAlias,
+      clipBehavior: clipBehavior,
       foregroundDecoration: BoxDecoration(color: foregroundColor),
       padding: EdgeInsets.only(
         left: leftPadding ?? allPadding ?? 0,

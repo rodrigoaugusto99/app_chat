@@ -138,6 +138,9 @@ class ChatService {
       // Para cada ID de chat, pega o documento correspondente na coleção 'chats'
       /*pega os ids dentro do array chatIds do doc do usuario,
       itera por todos e faz um ChatModel. */
+      if (_userService.user.chatIds.isEmpty) {
+        return [];
+      }
       for (String chatId in _userService.user.chatIds) {
         DocumentReference chatRef = firestore.collection('chats').doc(chatId);
         //separo o chatRef pq vou usar de novo depois usar com .data()
@@ -280,8 +283,9 @@ class ChatService {
 
 //?send message
   Future<MessageModel> sendMessage({
-    required String message,
+    String? message,
     required String chatId,
+    String? audioUrl,
   }) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -292,7 +296,8 @@ class ChatService {
 //criando map pra tacar dentro da colecao de messages e p dps fazer o fromMap pra MessageModel.
       final messageDoc = {
         'senderId': _userService.user.id!,
-        'message': message,
+        'message': message ?? '',
+        'audioUrl': audioUrl ?? '',
         'createdAt': Timestamp.fromDate(DateTime.now()),
       };
 
