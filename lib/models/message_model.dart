@@ -8,12 +8,16 @@ class MessageModel {
   String? message;
   String? audioUrl;
   Timestamp createdAt;
+  bool isDownloading;
+  bool hasError;
   MessageModel({
     this.id,
     this.user,
     required this.senderId,
     this.message,
     this.audioUrl,
+    this.isDownloading = false,
+    this.hasError = false,
     required this.createdAt,
   });
 

@@ -5,31 +5,36 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 final _log = getLogger('audio_utils');
-Future<String> downloadAudio({
+Future<String?> downloadAudio({
   required String chatId,
   required String audioUrl,
   required String messageId,
 }) async {
   // Obtém o diretório local para armazenar o arquivo
-  final directory = await getApplicationDocumentsDirectory();
-  final directoryPath = '${directory.path}/$chatId';
-  final filePath = '$directoryPath/$messageId.aac';
+  try {
+    final directory = await getApplicationDocumentsDirectory();
+    final directoryPath = '${directory.path}/$chatId';
+    final filePath = '$directoryPath/$messageId.aac';
 
-  // Cria a subpasta, se ela não existir
-  final dir = Directory(directoryPath);
-  if (!await dir.exists()) {
-    await dir.create(recursive: true);
+    // Cria a subpasta, se ela não existir
+    final dir = Directory(directoryPath);
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+
+    // Faz o download do arquivo de áudio
+    final response = await http.get(Uri.parse(audioUrl));
+    final file = File(filePath);
+
+    // Salva o arquivo localmente
+    await file.writeAsBytes(response.bodyBytes);
+    _log.i('path dod audio baixado!!!!!');
+    _log.i(filePath);
+    return filePath;
+  } on Exception catch (e) {
+    _log.e(e);
+    return null;
   }
-
-  // Faz o download do arquivo de áudio
-  final response = await http.get(Uri.parse(audioUrl));
-  final file = File(filePath);
-
-  // Salva o arquivo localmente
-  await file.writeAsBytes(response.bodyBytes);
-  _log.i('path dod audio baixado!!!!!');
-  _log.i(filePath);
-  return filePath;
 }
 
 Future<String> uploadAudioFile(String filePath) async {
@@ -53,3 +58,5 @@ Future<String> uploadAudioFile(String filePath) async {
     throw Exception('Erro ao fazer upload do áudio: $e');
   }
 }
+
+void checkIfAudioMessageIsDownloaded(String messageId) {}

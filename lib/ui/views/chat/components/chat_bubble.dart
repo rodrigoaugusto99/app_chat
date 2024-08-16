@@ -152,23 +152,30 @@ class _ChatBubbleState extends State<ChatBubble> {
         color: widget.isMe ? const Color(0xff128c7e) : Colors.grey[800],
         child: Row(
           children: [
-            IconButton(
-              icon: Icon(
-                isPlaying ? Icons.pause : Icons.play_arrow,
-                size: 32,
-                color: widget.isMe ? Colors.grey[800] : Colors.grey[200],
+            if (!widget.message.isDownloading)
+              IconButton(
+                icon: Icon(
+                  isPlaying ? Icons.pause : Icons.play_arrow,
+                  size: 32,
+                  color: widget.isMe ? Colors.grey[800] : Colors.grey[200],
+                ),
+                onPressed: () async {
+                  if (isPlaying) {
+                    await audioPlayer.pause();
+                    isPlaying = false;
+                  } else {
+                    // await audioPlayer.resume();
+                    await playAudio();
+                    //await audioPlayer.play(UrlSource(widget.message.audioUrl!));
+                  }
+                },
               ),
-              onPressed: () async {
-                if (isPlaying) {
-                  await audioPlayer.pause();
-                  isPlaying = false;
-                } else {
-                  // await audioPlayer.resume();
-                  await playAudio();
-                  //await audioPlayer.play(UrlSource(widget.message.audioUrl!));
-                }
-              },
-            ),
+            if (widget.message.isDownloading)
+              const Icon(
+                Icons.download,
+                size: 32,
+                color: Colors.blue,
+              ),
             Stack(
               alignment: Alignment.centerLeft,
               clipBehavior: Clip.none,

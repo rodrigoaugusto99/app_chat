@@ -126,9 +126,12 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     super.didChangeMetrics();
   }
 
+  Directory? directory;
+  //List<MessageModel> audioMessagesToDownload = [];
   Future<void> init() async {
     WidgetsBinding.instance.addObserver(this);
     setBusy(true);
+    directory = await getApplicationDocumentsDirectory();
     initRecorder();
     myUser = _userService.user;
 
@@ -136,10 +139,22 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 
     //! eu poderia aproveitar a primeira leva de snapshot do streamsubscription ne ao inves de fzr isso...p pegar as msg
     messages = await _chatService.getChatMessages(chat.id);
+    //todo: iterar por todas as msg e ver  quais nao estao baixadas.
+
+    //for(var message in messagea)
 
     if (messages == null) return; //todo: grab error
     //iterar por cada msg e inserir UserModel correspondente
+
+    List<MessageModel> audiosToCheck = [];
+
     for (var message in messages!) {
+      if (message.audioUrl != '') {
+        //! para teste
+        message.isDownloading = true;
+        audiosToCheck.add(message);
+      }
+
       if (message.senderId == myUser!.id) {
         //aqui posso colocar uma flag na mensagem pra dizer que eh minha, pro exemplo.
         message.user = myUser;
@@ -149,6 +164,12 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
         );
       }
     }
+
+//to checando em outro loop pra nao atrapalhar ou enlerdar o loop de todas as mensagens.
+    //checando as mensagens de audio
+    // for (var audio in audiosToCheck) {
+    //   await checkIfAudioMessageIsDownloaded(audio);
+    // }
 
     //messagesGroupedByDays = createExtractDayList(messages!.reversed.toList());
     messagesGroupedByDays = createExtractDayList(messages);
@@ -181,6 +202,41 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     });
 
     setBusy(false);
+  }
+
+/*
+aqui estou baixando a mensagenm, setando o estado dela de loading para refletir
+na view.
+ */
+  Future<void> checkIfAudioMessageIsDownloaded(MessageModel message) async {
+    final directoryPath = '${directory!.path}/${chat.id}';
+    final filePath = '$directoryPath/${message.id}.aac';
+
+    // Cria a subpasta, se ela não existir
+    final file = Directory(filePath);
+    //se nao foi baixada, entao baixar
+    if (!await file.exists()) {
+      _log.i('audio ainda nao baixado: $filePath');
+      //antes de comecar o download, setar esse bool como true
+      message.isDownloading = true;
+      final fileDownloaded = await downloadAudio(
+        audioUrl: message.audioUrl!,
+        chatId: chat.id,
+        messageId: message.id!,
+      );
+      if (fileDownloaded == null) {
+        _log.e('falha ao baixar mensagem ${message.id}');
+        message.isDownloading = false;
+        //se der erro, setar esse bool de erro pra mostrar um simbolo de erro nessa mensagem.
+        message.hasError = true;
+        return;
+      }
+      //se nao deu erro, ou seja, nao retornou null naquele metodo, entao tirar esse bool true.
+      //ai la no bubble, mostraremos a setinha ao inves do simbolo de estar baixando.
+      message.isDownloading = false;
+      notifyListeners();
+      //audioMessagesToDownload.add(message);
+    }
   }
 
   Future<void> _scrollToEnd() async {
