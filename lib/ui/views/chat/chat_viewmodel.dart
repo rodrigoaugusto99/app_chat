@@ -7,12 +7,13 @@ import 'package:app_chat/models/message_model.dart';
 import 'package:app_chat/models/user_model.dart';
 import 'package:app_chat/services/chat_service.dart';
 import 'package:app_chat/services/user_service.dart';
+import 'package:app_chat/ui/utils/audio_utils.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/public/flutter_sound_recorder.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:stacked/stacked.dart';
-import 'package:http/http.dart' as http;
 
 class MessagesByDay {
   final String day;
@@ -82,6 +83,7 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
     super.dispose();
     if (_subscription == null) return;
     _subscription!.cancel();
+    _chatService.disposeListener();
   }
 
 //chamado quando muda o tasmanhho do layout (qnd abre teclado)
@@ -153,9 +155,17 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 
     notifyListeners();
     _chatService.setChatListener(chat, (newMessage) {
+      if (newMessage.audioUrl != '') {
+        downloadAudio(
+          chatId: chat.id,
+          audioUrl: newMessage.audioUrl!,
+          messageId: newMessage.id!,
+        );
+      }
       //adicionando a nova mensagem na lista de mensagens do MessagesByModel de HOJE.
       DateTime now = DateTime.now();
       String nowFormatted = _formatDate(now);
+      //temos que saber qual eh o grupo de dias que vms colocar a nova mensagem.
       MessagesByDay todayMessages =
           messagesGroupedByDays!.firstWhere((msg) => msg.day == nowFormatted);
       messages!.add(newMessage);
@@ -169,11 +179,7 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
       // });
       notifyListeners();
     });
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   Future.delayed(const Duration(milliseconds: 400), () {
-    //     _scrollToEnd();
-    //   });
-    // });
+
     setBusy(false);
   }
 
@@ -214,11 +220,6 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     return extractDays;
   }
 
-  // String formatDate(DateTime date) {
-  //   DateFormat dateFormat = DateFormat('EEEE, dd/MM/yyyy', 'pt_BR');
-  //   return dateFormat.format(date);
-  // }
-
   String _formatDate(DateTime date) {
     return "${date.day}/${date.month}/${date.year}";
   }
@@ -231,22 +232,6 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     }
     notifyListeners();
   }
-
-  // Future<void> sendText() async {
-  //   if (controller.text.isEmpty) return;
-  //   await _chatService.sendMessage(
-  //     message: controller.text,
-  //     chatId: chat.id,
-  //   );
-  // }
-
-  // Future<void> sendAudio() async {
-  //   if (controller.text.isEmpty) return;
-  //   await _chatService.sendMessage(
-  //     message: controller.text,
-  //     chatId: chat.id,
-  //   );
-  // }
 
   void sendMessage({String? audioUrl}) async {
     //if (controller.text.isEmpty) return;
@@ -267,13 +252,6 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
   }
 
 //-------------audio recording ---------------
-
-//todo: download audio com http ou com downloadUrl do firebase storage msm
-// Future<File> downloadAudio(String url, String savePath) async {
-//   var response = await http.get(Uri.parse(url));
-//   File file = File(savePath);
-//   return file.writeAsBytes(response.bodyBytes);
-// }
 
   final recorder = FlutterSoundRecorder();
   bool canRecord = true;
@@ -323,28 +301,6 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
       await recorder.startRecorder(toFile: 'audio');
     }
     notifyListeners();
-  }
-
-  Future<String> uploadAudioFile(String filePath) async {
-    File file = File(filePath);
-    try {
-      // Nome do arquivo no Firebase Storage
-      String fileName = "${DateTime.now().millisecondsSinceEpoch}.aac";
-
-      // Pasta onde o arquivo será armazenado (por exemplo, 'audios/')
-      Reference ref = FirebaseStorage.instance.ref().child('audios/$fileName');
-
-      // Upload do arquivo
-      UploadTask uploadTask = ref.putFile(file);
-      TaskSnapshot taskSnapshot = await uploadTask;
-
-      // Recupera a URL pública do arquivo armazenado
-      String downloadUrl = await taskSnapshot.ref.getDownloadURL();
-      return downloadUrl;
-    } catch (e) {
-      _log.e('Erro ao fazer upload do áudio: $e');
-      throw Exception('Erro ao fazer upload do áudio: $e');
-    }
   }
 }
 

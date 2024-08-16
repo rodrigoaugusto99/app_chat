@@ -1,7 +1,7 @@
 import 'package:app_chat/models/chat_model.dart';
 import 'package:app_chat/ui/utils/helpers.dart';
 import 'package:app_chat/ui/views/chat/components/chat_bubble.dart';
-import 'package:app_chat/ui/views/chat/components/my_chat_bubble.dart';
+import 'package:app_chat/ui/views/chat/components/chat_bubble.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:stacked/stacked.dart';
@@ -117,10 +117,13 @@ class ChatView extends StackedView<ChatViewModel> {
                                         : MainAxisAlignment.start,
                                 children: [
                                   message.senderId == viewModel.myUser!.id
-                                      ? MyChatBubble(
+                                      ? ChatBubble(
+                                          isMe: true,
+                                          chatId: chat.id,
                                           message: message,
                                         )
                                       : ChatBubble(
+                                          chatId: chat.id,
                                           message: message,
                                         )
                                 ],

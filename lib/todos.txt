@@ -77,3 +77,12 @@ fzr migracao de dados e logicas pro mongodb
 
 
 vai ter um widget especifico pra mensagem, pra foto, pra foto com mensagem, pra voz, etc.
+
+da pra, quando eu for gravar um audio, ao inves de eu ter que fzr upload no storage, e de la 
+o outro usuario vai ter que baxiar esse audio no stroage, pq eu nao faco o download no meu diospotivo,,
+e envio o arquvio de bytes ou sei la o formato dele, pelo chat? ai o outro usuario receberia algo
+bem mais "leve" pra fazer download, doque ter que baixar algo da internet e dependendo da internert.
+
+
+entrou no chat, percorre por todas as mensagens que tem audioUrl, ve se elas ja estou baixadas, se nao, baixa.
+p ver se nao ta baixada, eh so verificar se existe um arquivo com o nome daquela mensagemId naquela pasta chatId.

@@ -54,6 +54,7 @@ class ChatService {
 
 //averiguar se aqui so vem um por um mesmo
       for (var change in querySnapshot.docChanges) {
+        //todo: DocumentChangeType.removed
         if (change.type == DocumentChangeType.added) {
           final messageModel = MessageModel.fromDocument(change.doc);
 //atribuindo o user na mensagem
@@ -72,6 +73,10 @@ class ChatService {
         }
       }
     });
+  }
+
+  void disposeListener() {
+    _actualChatSubscription!.cancel();
   }
 
   Future<List<MessageModel>> getMessages(String chatId) async {
@@ -282,7 +287,7 @@ class ChatService {
   }
 
 //?send message
-  Future<MessageModel> sendMessage({
+  Future<void> sendMessage({
     String? message,
     required String chatId,
     String? audioUrl,
@@ -298,11 +303,13 @@ class ChatService {
         'senderId': _userService.user.id!,
         'message': message ?? '',
         'audioUrl': audioUrl ?? '',
+        //'createdAt': FieldValue.serverTimestamp(),
+
         'createdAt': Timestamp.fromDate(DateTime.now()),
       };
 
       messagesRef.add(messageDoc);
-      return MessageModel.fromMap(messageDoc);
+      // return MessageModel.fromMap(messageDoc);
     } on Exception catch (e) {
       throw AppError(message: e.toString());
     }
