@@ -150,8 +150,8 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 
     for (var message in messages!) {
       if (message.audioUrl != '') {
-        //! para teste
-        message.isDownloading = true;
+        // //! para teste
+        // message.isDownloading = true;
         audiosToCheck.add(message);
       }
 
@@ -165,23 +165,21 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
       }
     }
 
-//to checando em outro loop pra nao atrapalhar ou enlerdar o loop de todas as mensagens.
-    //checando as mensagens de audio
-    // for (var audio in audiosToCheck) {
-    //   await checkIfAudioMessageIsDownloaded(audio);
-    // }
-
     //messagesGroupedByDays = createExtractDayList(messages!.reversed.toList());
     messagesGroupedByDays = createExtractDayList(messages);
 
     notifyListeners();
     _chatService.setChatListener(chat, (newMessage) {
       if (newMessage.audioUrl != '') {
-        downloadAudio(
-          chatId: chat.id,
-          audioUrl: newMessage.audioUrl!,
-          messageId: newMessage.id!,
-        );
+        newMessage.isDownloading = true;
+        _log.f('isDownloading = true');
+        notifyListeners();
+        // downloadAudio(
+        //   chatId: chat.id,
+        //   audioUrl: newMessage.audioUrl!,
+        //   messageId: newMessage.id!,
+        // );
+        download(newMessage);
       }
       //adicionando a nova mensagem na lista de mensagens do MessagesByModel de HOJE.
       DateTime now = DateTime.now();
@@ -202,6 +200,12 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     });
 
     setBusy(false);
+
+    //to checando em outro loop pra nao atrapalhar ou enlerdar o loop de todas as mensagens.
+    //checando as mensagens de audio
+    for (var audio in audiosToCheck) {
+      await checkIfAudioMessageIsDownloaded(audio);
+    }
   }
 
 /*
@@ -209,34 +213,41 @@ aqui estou baixando a mensagenm, setando o estado dela de loading para refletir
 na view.
  */
   Future<void> checkIfAudioMessageIsDownloaded(MessageModel message) async {
-    final directoryPath = '${directory!.path}/${chat.id}';
+    Directory? directory = await getApplicationDocumentsDirectory();
+    final directoryPath = '${directory.path}/${chat.id}';
     final filePath = '$directoryPath/${message.id}.aac';
 
     // Cria a subpasta, se ela não existir
-    final file = Directory(filePath);
-    //se nao foi baixada, entao baixar
-    if (!await file.exists()) {
+    final file = File(filePath); // Corrigido para usar File em vez de Directory
+
+    // Verifica se o arquivo já foi baixado
+    final alreadyExist = file.existsSync();
+    if (!alreadyExist) {
       _log.i('audio ainda nao baixado: $filePath');
-      //antes de comecar o download, setar esse bool como true
-      message.isDownloading = true;
-      final fileDownloaded = await downloadAudio(
-        audioUrl: message.audioUrl!,
-        chatId: chat.id,
-        messageId: message.id!,
-      );
-      if (fileDownloaded == null) {
-        _log.e('falha ao baixar mensagem ${message.id}');
-        message.isDownloading = false;
-        //se der erro, setar esse bool de erro pra mostrar um simbolo de erro nessa mensagem.
-        message.hasError = true;
-        return;
-      }
-      //se nao deu erro, ou seja, nao retornou null naquele metodo, entao tirar esse bool true.
-      //ai la no bubble, mostraremos a setinha ao inves do simbolo de estar baixando.
-      message.isDownloading = false;
-      notifyListeners();
-      //audioMessagesToDownload.add(message);
+      download(message);
     }
+  }
+
+  Future<void> download(MessageModel message) async {
+    //message.isDownloading = true;
+    final fileDownloaded = await downloadAudio(
+      audioUrl: message.audioUrl!,
+      chatId: chat.id,
+      messageId: message.id!,
+    );
+    if (fileDownloaded == null) {
+      _log.e('falha ao baixar mensagem ${message.id}');
+      message.isDownloading = false;
+      _log.f('isDownloading = false');
+      //se der erro, setar esse bool de erro pra mostrar um simbolo de erro nessa mensagem.
+      message.hasError = true;
+      return;
+    }
+    //se nao deu erro, ou seja, nao retornou null naquele metodo, entao tirar esse bool true.
+    //ai la no bubble, mostraremos a setinha ao inves do simbolo de estar baixando.
+    message.isDownloading = false;
+    _log.f('isDownloading = false');
+    notifyListeners();
   }
 
   Future<void> _scrollToEnd() async {
