@@ -1,10 +1,16 @@
 import 'dart:io';
-
+import 'package:flutter/material.dart';
 import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class RecorderService {
-  final recorder = FlutterSoundRecorder();
+  FlutterSoundRecorder? recorder;
+  ValueNotifier<FlutterSoundRecorder?> recorderNotifier = ValueNotifier(null);
+
+  void init() {
+    recorder = FlutterSoundRecorder();
+    recorderNotifier.value = recorder;
+  }
 
   bool isRecorderReady = false;
 
@@ -15,11 +21,11 @@ class RecorderService {
       throw Exception('Microphone permission not granted');
     }
 
-    await recorder.openRecorder();
+    await recorder!.openRecorder();
 
     isRecorderReady = true;
 
-    recorder.setSubscriptionDuration(const Duration(milliseconds: 500));
+    recorder!.setSubscriptionDuration(const Duration(milliseconds: 500));
   }
 
   Future<File?> recordVoice() async {
@@ -36,12 +42,14 @@ class RecorderService {
     if (!isRecorderReady) return null;
 
     //se ja esta gravando
-    if (recorder.isRecording) {
-      final path = await recorder.stopRecorder();
+    if (recorder!.isRecording) {
+      final path = await recorder!.stopRecorder();
+      //isRecording.value = false;
       final audioFile = File(path!);
       return audioFile;
     } else {
-      await recorder.startRecorder(toFile: 'audio');
+      await recorder!.startRecorder(toFile: 'audio');
+      //isRecording.value = true;
     }
     return null;
   }

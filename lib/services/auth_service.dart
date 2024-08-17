@@ -1,15 +1,12 @@
 import 'dart:async';
-
 import 'package:app_chat/services/chat_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/app/app.logger.dart';
-import 'package:app_chat/app/app.router.dart';
 import 'package:app_chat/services/user_service.dart';
 import 'package:app_chat/ui/dialogs/loading/loading_dialog.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:stacked_services/stacked_services.dart';
 
 class AuthService {
   User? currUser = FirebaseAuth.instance.currentUser;

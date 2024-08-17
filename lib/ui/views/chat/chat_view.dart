@@ -1,7 +1,6 @@
 import 'package:app_chat/models/chat_model.dart';
 import 'package:app_chat/ui/utils/helpers.dart';
 import 'package:app_chat/ui/views/chat/components/chat_bubble.dart';
-import 'package:app_chat/ui/views/chat/components/chat_bubble.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:stacked/stacked.dart';
@@ -190,9 +189,9 @@ class ChatView extends StackedView<ChatViewModel> {
                       Expanded(
                         child: Column(
                           children: [
-                            if (viewModel.recorder.isRecording)
+                            if (viewModel.recorder!.isRecording)
                               StreamBuilder<RecordingDisposition>(
-                                stream: viewModel.recorder.onProgress,
+                                stream: viewModel.recorder!.onProgress,
                                 builder: (context, snapshot) {
                                   final duration = snapshot.hasData
                                       ? snapshot.data!.duration

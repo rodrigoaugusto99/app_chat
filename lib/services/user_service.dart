@@ -1,15 +1,11 @@
 import 'dart:async';
-
 import 'package:app_chat/models/user_model.dart';
 import 'package:app_chat/exceptions/app_error.dart';
 import 'package:app_chat/services/chat_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/app/app.logger.dart';
-
 import 'package:app_chat/services/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:stacked_services/stacked_services.dart';
 
 class UserService {

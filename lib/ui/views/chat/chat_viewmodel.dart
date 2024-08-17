@@ -11,7 +11,7 @@ import 'package:app_chat/services/recorder_service.dart';
 import 'package:app_chat/services/user_service.dart';
 import 'package:app_chat/ui/utils/storage_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:stacked/stacked.dart';
 
 class MessagesByDay {
@@ -33,22 +33,30 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
   }) {
     WidgetsBinding.instance.addObserver(this);
     screenHeight = MediaQuery.of(context).size.height;
+    //isRecording = _recorderService.recorder.isRecording;
+    _recorderService.recorderNotifier.addListener(() {
+      notifyListeners();
+    });
   }
+
+//?nao seria melhor pegar o recorder inteiro, ai ja teria acesso ao isPaused tbm etc.
+//! mas ai essa viewModel dependeria do pacote, pois teriamos que instanciar o tipo FlutterSoundRecorder...
+  //fodase, vou depender msm
+  FlutterSoundRecorder? get recorder => _recorderService.recorderNotifier.value;
   // FocusNode focus = FocusNode();
 
   ScrollController scrollController = ScrollController();
-
   TextEditingController controller = TextEditingController();
   final _userService = locator<UserService>();
   final _chatService = locator<ChatService>();
   final _log = getLogger('ChatViewModel');
-//todo: ao subir teclado, aparecer ultimas msgs normalmente
+  double? screenHeight;
+
   List<UserModel>? otherUses;
   List<MessageModel>? messages;
   List<MessagesByDay>? messagesGroupedByDays;
   UserModel? myUser;
   StreamSubscription? _subscription;
-  double? screenHeight;
 
   final localStorageService = locator<LocalStorageService>();
   final _recorderService = locator<RecorderService>();
@@ -91,30 +99,23 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     super.didChangeMetrics();
   }
 
-  Directory? directory;
   Future<void> init() async {
     WidgetsBinding.instance.addObserver(this);
     setBusy(true);
-    directory = await getApplicationDocumentsDirectory();
-    //initRecorder();
+
     myUser = _userService.user;
-
     //todo: load messages //todo: insert on some cache
-
     //! eu poderia aproveitar a primeira leva de snapshot do streamsubscription ne ao inves de fzr isso...p pegar as msg
     messages = await _chatService.getChatMessages(chat.id);
-    //todo: iterar por todas as msg e ver  quais nao estao baixadas.
-
-    //for(var message in messagea)
-
     if (messages == null) return; //todo: grab error
-    //iterar por cada msg e inserir UserModel correspondente
 
+    //audios que serao checados se ja foram baixados.
     List<MessageModel> audiosToCheck = [];
 
+//iterar por cada msg e inserir UserModel correspondente
     for (var message in messages!) {
       if (message.audioUrl != '') {
-        // //! para teste
+        //! para teste
         // message.isDownloading = true;
         audiosToCheck.add(message);
       }
@@ -150,11 +151,6 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 
       // Se o grupo do dia de hoje existe, adicione a nova mensagem a ele
       todayMessages.messages.add(newMessage);
-
-//nao precisa mais de descer o scroll a cada nova msg pq agr a listview ta reversa, entao ela autoajusta pro inicio
-      // Future.delayed(const Duration(milliseconds: 100), () {
-      //   _scrollToEnd();
-      // });
       notifyListeners();
     });
 
@@ -172,11 +168,6 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
       }
     }
   }
-
-/*
-aqui estou baixando a mensagenm, setando o estado dela de loading para refletir
-na view.
- */
 
   Future<void> download(MessageModel message) async {
     //message.isDownloading = true;

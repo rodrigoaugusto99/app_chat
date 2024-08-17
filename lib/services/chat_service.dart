@@ -1,16 +1,12 @@
 import 'dart:async';
-
 import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/app/app.logger.dart';
 import 'package:app_chat/exceptions/app_error.dart';
 import 'package:app_chat/models/chat_model.dart';
 import 'package:app_chat/models/message_model.dart';
-import 'package:app_chat/models/user_model.dart';
 import 'package:app_chat/services/user_service.dart';
 import 'package:app_chat/ui/utils/firestore_utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:stacked_services/stacked_services.dart';
 
 class ChatService {
   final _log = getLogger('ChatService');

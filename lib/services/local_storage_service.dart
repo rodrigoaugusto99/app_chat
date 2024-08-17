@@ -7,6 +7,12 @@ import 'package:path_provider/path_provider.dart';
 class LocalStorageService {
   final _htppService = locator<HttpService>();
 
+  Directory? directory;
+
+  Future<void> init() async {
+    directory = await getApplicationDocumentsDirectory();
+  }
+
   Future<String?> downloadAudio({
     required String chatId,
     required String audioUrl,
@@ -14,8 +20,7 @@ class LocalStorageService {
   }) async {
     // Obtém o diretório local para armazenar o arquivo
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final directoryPath = '${directory.path}/$chatId';
+      final directoryPath = '${directory!.path}/$chatId';
       final filePath = '$directoryPath/$messageId.aac';
 
       // Cria a subpasta, se ela não existir
@@ -44,8 +49,7 @@ class LocalStorageService {
     required MessageModel message,
     required String chatId,
   }) async {
-    Directory? directory = await getApplicationDocumentsDirectory();
-    final directoryPath = '${directory.path}/$chatId';
+    final directoryPath = '${directory!.path}/$chatId';
     final filePath = '$directoryPath/${message.id}.aac';
 
     // Cria a subpasta, se ela não existir
@@ -59,5 +63,22 @@ class LocalStorageService {
       return false;
     }
     return true;
+  }
+
+  Future<String?> getAudioPath({
+    required String chatId,
+    required String messageId,
+  }) async {
+    final filePath = '${directory!.path}/$chatId/$messageId.aac';
+
+    final file = File(filePath);
+
+    bool fileExists = await file.exists();
+    //_log.i(file);
+
+    if (!fileExists) {
+      throw Exception('Arquivo nao existe');
+    }
+    return filePath;
   }
 }

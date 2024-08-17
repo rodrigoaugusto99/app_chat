@@ -1,13 +1,12 @@
-import 'dart:io';
-
-import 'package:app_chat/app/app.logger.dart';
+import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/models/message_model.dart';
+import 'package:app_chat/services/audio_service.dart';
+import 'package:app_chat/services/local_storage_service.dart';
 import 'package:app_chat/ui/common/ui_helpers.dart';
 import 'package:app_chat/ui/utils/helpers.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 
 class ChatBubble extends StatefulWidget {
   final String chatId;
@@ -25,7 +24,7 @@ class ChatBubble extends StatefulWidget {
 }
 
 class _ChatBubbleState extends State<ChatBubble> {
-  final _log = getLogger('MyChatBubble');
+  //final _log = getLogger('MyChatBubble');
   AudioPlayer audioPlayer = AudioPlayer();
   bool isPlaying = false;
   Duration duration = Duration.zero;
@@ -56,17 +55,6 @@ class _ChatBubbleState extends State<ChatBubble> {
     }
   }
 
-  Future setAudio() async {
-    //audioPlayer.setSourceBytes();
-    audioPlayer.setReleaseMode(ReleaseMode.stop);
-
-//todo: logica para baixar a url lcoalmente
-//todo: avertiguart se da p fzr aqui ou eh melhhor comecar o download logo la
-//todo: quando chegar o snapshot no listener
-    //final file = File(...);
-    // audioPlayer.setSourceDeviceFile(file.path);
-  }
-
   @override
   void dispose() {
     audioPlayer.dispose();
@@ -74,6 +62,7 @@ class _ChatBubbleState extends State<ChatBubble> {
   }
 
 //no metodo downloadAudio, na primeira vez o audio eh baixado em cache, em um arquivo temporario.
+  //todo: utisl
   String formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     String minutes = twoDigits(duration.inMinutes.remainder(60));
@@ -81,35 +70,12 @@ class _ChatBubbleState extends State<ChatBubble> {
     return "$minutes:$seconds";
   }
 
-  Future<void> listAllFiles() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final filePath = '${directory.path}/${widget.chatId}/';
-    final files = Directory(filePath).listSync();
-
-    if (files.isEmpty) {
-      _log.e("Nenhum arquivo encontrado no diretório.");
-    } else {
-      for (var file in files) {
-        _log.f('Arquivo encontrado: ${file.path}');
-      }
-    }
-  }
-
   Future<void> playAudio() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final filePath =
-        '${directory.path}/${widget.chatId}/${widget.message.id}.aac';
-
-    final file = File(filePath);
-    _log.i(file);
-    if (await file.exists()) {
-      // O arquivo existe, reproduza-o
-      await audioPlayer.play(UrlSource(filePath));
-    } else {
-      // Lidar com o caso onde o arquivo não foi encontrado (talvez rebaixar)
-      _log.e("Arquivo de áudio não encontrado.");
-      await listAllFiles();
-    }
+    final audioPath = await locator<LocalStorageService>().getAudioPath(
+      chatId: widget.chatId,
+      messageId: widget.message.id!,
+    );
+    await locator<AudioService>().playAudio(audioPath!);
   }
 
   @override
@@ -228,15 +194,4 @@ class _ChatBubbleState extends State<ChatBubble> {
 
     return widget.message.message != '' ? myText() : myAudio();
   }
-
-  // Future<void> playAudio(String filePath) async {
-  //   // Lógica para reproduzir o áudio (use o audioplayers)
-
-  //   await audioPlayer.play(DeviceFileSource(filePath));
-  // }
-
-  // Future<String> downloadAudio(String url, String savePath) async {
-  //   // Lógica para baixar o áudio (use o pacote http)
-  //   return savePath;
-  // }
 }

@@ -14,7 +14,6 @@ import 'package:stacked_shared/stacked_shared.dart';
 import '../services/audio_service.dart';
 import '../services/auth_service.dart';
 import '../services/chat_service.dart';
-import '../services/firebase_service.dart';
 import '../services/http_service.dart';
 import '../services/local_storage_service.dart';
 import '../services/recorder_service.dart';
@@ -41,5 +40,4 @@ Future<void> setupLocator({
   locator.registerLazySingleton(() => HttpService());
   locator.registerLazySingleton(() => AudioService());
   locator.registerLazySingleton(() => LocalStorageService());
-  locator.registerLazySingleton(() => FirebaseService());
 }
