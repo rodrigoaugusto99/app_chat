@@ -5,6 +5,11 @@ import 'package:stacked_services/stacked_services.dart';
 import 'package:app_chat/services/auth_service.dart';
 import 'package:app_chat/services/user_service.dart';
 import 'package:app_chat/services/chat_service.dart';
+import 'package:app_chat/services/recorder_service.dart';
+import 'package:app_chat/services/http_service.dart';
+import 'package:app_chat/services/audio_service.dart';
+import 'package:app_chat/services/local_storage_service.dart';
+import 'package:app_chat/services/firebase_service.dart';
 // @stacked-import
 
 import 'test_helpers.mocks.dart';
@@ -16,6 +21,11 @@ import 'test_helpers.mocks.dart';
   MockSpec<AuthService>(onMissingStub: OnMissingStub.returnDefault),
   MockSpec<UserService>(onMissingStub: OnMissingStub.returnDefault),
   MockSpec<ChatService>(onMissingStub: OnMissingStub.returnDefault),
+  MockSpec<RecorderService>(onMissingStub: OnMissingStub.returnDefault),
+  MockSpec<HttpService>(onMissingStub: OnMissingStub.returnDefault),
+  MockSpec<AudioService>(onMissingStub: OnMissingStub.returnDefault),
+  MockSpec<LocalStorageService>(onMissingStub: OnMissingStub.returnDefault),
+  MockSpec<FirebaseService>(onMissingStub: OnMissingStub.returnDefault),
 // @stacked-mock-spec
 ])
 void registerServices() {
@@ -25,6 +35,11 @@ void registerServices() {
   getAndRegisterAuthService();
   getAndRegisterUserService();
   getAndRegisterChatService();
+  getAndRegisterRecorderService();
+  getAndRegisterHttpService();
+  getAndRegisterAudioService();
+  getAndRegisterLocalStorageService();
+  getAndRegisterFirebaseService();
 // @stacked-mock-register
 }
 
@@ -96,6 +111,41 @@ MockChatService getAndRegisterChatService() {
   _removeRegistrationIfExists<ChatService>();
   final service = MockChatService();
   locator.registerSingleton<ChatService>(service);
+  return service;
+}
+
+MockRecorderService getAndRegisterRecorderService() {
+  _removeRegistrationIfExists<RecorderService>();
+  final service = MockRecorderService();
+  locator.registerSingleton<RecorderService>(service);
+  return service;
+}
+
+MockHttpService getAndRegisterHttpService() {
+  _removeRegistrationIfExists<HttpService>();
+  final service = MockHttpService();
+  locator.registerSingleton<HttpService>(service);
+  return service;
+}
+
+MockAudioService getAndRegisterAudioService() {
+  _removeRegistrationIfExists<AudioService>();
+  final service = MockAudioService();
+  locator.registerSingleton<AudioService>(service);
+  return service;
+}
+
+MockLocalStorageService getAndRegisterLocalStorageService() {
+  _removeRegistrationIfExists<LocalStorageService>();
+  final service = MockLocalStorageService();
+  locator.registerSingleton<LocalStorageService>(service);
+  return service;
+}
+
+MockFirebaseService getAndRegisterFirebaseService() {
+  _removeRegistrationIfExists<FirebaseService>();
+  final service = MockFirebaseService();
+  locator.registerSingleton<FirebaseService>(service);
   return service;
 }
 // @stacked-mock-create

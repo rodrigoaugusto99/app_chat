@@ -11,6 +11,11 @@ import 'package:app_chat/services/user_service.dart';
 import 'package:app_chat/ui/views/chat/chat_view.dart';
 import 'package:app_chat/services/chat_service.dart';
 import 'package:app_chat/ui/dialogs/show_users/show_users_dialog.dart';
+import 'package:app_chat/services/recorder_service.dart';
+import 'package:app_chat/services/http_service.dart';
+import 'package:app_chat/services/audio_service.dart';
+import 'package:app_chat/services/local_storage_service.dart';
+import 'package:app_chat/services/firebase_service.dart';
 // @stacked-import
 
 @StackedApp(
@@ -28,6 +33,11 @@ import 'package:app_chat/ui/dialogs/show_users/show_users_dialog.dart';
     LazySingleton(classType: AuthService),
     LazySingleton(classType: UserService),
     LazySingleton(classType: ChatService),
+    LazySingleton(classType: RecorderService),
+    LazySingleton(classType: HttpService),
+    LazySingleton(classType: AudioService),
+    LazySingleton(classType: LocalStorageService),
+    LazySingleton(classType: FirebaseService),
 // @stacked-service
   ],
   bottomsheets: [

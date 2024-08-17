@@ -6,13 +6,12 @@ import 'package:app_chat/models/chat_model.dart';
 import 'package:app_chat/models/message_model.dart';
 import 'package:app_chat/models/user_model.dart';
 import 'package:app_chat/services/chat_service.dart';
+import 'package:app_chat/services/local_storage_service.dart';
+import 'package:app_chat/services/recorder_service.dart';
 import 'package:app_chat/services/user_service.dart';
-import 'package:app_chat/ui/utils/audio_utils.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:app_chat/ui/utils/storage_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:stacked/stacked.dart';
 
 class MessagesByDay {
@@ -34,24 +33,7 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
   }) {
     WidgetsBinding.instance.addObserver(this);
     screenHeight = MediaQuery.of(context).size.height;
-
-    //issso eh pra notificar os ouvintes qnd essa variavel do chharswervice atualizar
-    // _chatService.actualChatMessages.addListener(() {
-    //   notifyListeners();
-    // });
-    // focus.addListener(() {
-    //   if (focus.hasFocus) {
-    //     _scrollToEnd();
-    //     Future.delayed(
-    //       const Duration(milliseconds: 1000),
-    //       () => _scrollToEnd(),
-    //     );
-    //   }
-    // });
   }
-  //getter da variavel do service
-  // List<MessageModel>? get actualChatMessages =>
-  //     _chatService.actualChatMessages.value;
   // FocusNode focus = FocusNode();
 
   ScrollController scrollController = ScrollController();
@@ -67,6 +49,9 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
   UserModel? myUser;
   StreamSubscription? _subscription;
   double? screenHeight;
+
+  final localStorageService = locator<LocalStorageService>();
+  final _recorderService = locator<RecorderService>();
 //!
 //!vou precisar fzr funcao de voltar manualmente pro back do appbar e pro willpop
 //!pois preciso dar dispose no scroll muito rapido pra evitar
@@ -89,16 +74,6 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
 //chamado quando muda o tasmanhho do layout (qnd abre teclado)
   @override
   void didChangeMetrics() {
-    //pra isso nao chamar quando eu sair da tela, dar dipose no controller e chamar o didChangeMetrics pois o teclado esta visivel
-    // if (!scrollController.hasListeners) return;
-
-    //apenas se a posicao atual e menor que a substracao entre o maximo e o tamanhho total
-    // if ((scrollController.position.maxScrollExtent -
-    //         scrollController.position.pixels) <
-    //     screenHeight) {
-    //   _log.e('scroll');
-    // }
-    //if (!scrollController.hasClients) return;
 /*
 ao abrir o teclado, caso a distancia entre o scroll atual e o maximo de scroll possivel
 for menor que a metade da altura da tela, entao faz o scroll.
@@ -108,16 +83,6 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 
 //se scroll positionf for um pouco maior que o minimi
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // if ((scrollController.position.minScrollExtent -
-      //         scrollController.position.pixels) <
-      //     (screenHeight! / 2)) {
-      //   _scrollToEnd();
-      //   // scrollController.animateTo(
-      //   //   scrollController.position.maxScrollExtent,
-      //   //   duration: const Duration(milliseconds: 100),
-      //   //   curve: Curves.easeInOut,
-      //   // );
-      // }
       //condicao pro scroll da lista ir la pra baixo
       if ((screenHeight! / 2) > scrollController.position.pixels) {
         _scrollToEnd();
@@ -127,12 +92,11 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
   }
 
   Directory? directory;
-  //List<MessageModel> audioMessagesToDownload = [];
   Future<void> init() async {
     WidgetsBinding.instance.addObserver(this);
     setBusy(true);
     directory = await getApplicationDocumentsDirectory();
-    initRecorder();
+    //initRecorder();
     myUser = _userService.user;
 
     //todo: load messages //todo: insert on some cache
@@ -174,11 +138,6 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
         newMessage.isDownloading = true;
         _log.f('isDownloading = true');
         notifyListeners();
-        // downloadAudio(
-        //   chatId: chat.id,
-        //   audioUrl: newMessage.audioUrl!,
-        //   messageId: newMessage.id!,
-        // );
         download(newMessage);
       }
       //adicionando a nova mensagem na lista de mensagens do MessagesByModel de HOJE.
@@ -204,7 +163,13 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     //to checando em outro loop pra nao atrapalhar ou enlerdar o loop de todas as mensagens.
     //checando as mensagens de audio
     for (var audio in audiosToCheck) {
-      await checkIfAudioMessageIsDownloaded(audio);
+      bool isDowloaded = await localStorageService.checkIfAudioIsDownloaded(
+        message: audio,
+        chatId: chat.id,
+      );
+      if (!isDowloaded) {
+        download(audio);
+      }
     }
   }
 
@@ -212,25 +177,10 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 aqui estou baixando a mensagenm, setando o estado dela de loading para refletir
 na view.
  */
-  Future<void> checkIfAudioMessageIsDownloaded(MessageModel message) async {
-    Directory? directory = await getApplicationDocumentsDirectory();
-    final directoryPath = '${directory.path}/${chat.id}';
-    final filePath = '$directoryPath/${message.id}.aac';
-
-    // Cria a subpasta, se ela não existir
-    final file = File(filePath); // Corrigido para usar File em vez de Directory
-
-    // Verifica se o arquivo já foi baixado
-    final alreadyExist = file.existsSync();
-    if (!alreadyExist) {
-      _log.i('audio ainda nao baixado: $filePath');
-      download(message);
-    }
-  }
 
   Future<void> download(MessageModel message) async {
     //message.isDownloading = true;
-    final fileDownloaded = await downloadAudio(
+    final fileDownloaded = await localStorageService.downloadAudio(
       audioUrl: message.audioUrl!,
       chatId: chat.id,
       messageId: message.id!,
@@ -252,11 +202,8 @@ na view.
 
   Future<void> _scrollToEnd() async {
     if (!scrollController.hasClients) return;
-    //if (!scrollController.hasListeners) return;
     scrollController.jumpTo(scrollController.position.minScrollExtent);
     _log.i('');
-    // await Future.delayed(const Duration(milliseconds: 500));
-    // _scrollToEnd();
   }
 
   List<MessagesByDay> createExtractDayList(List<MessageModel>? allMessages) {
@@ -287,6 +234,7 @@ na view.
     return extractDays;
   }
 
+//todo: utils
   String _formatDate(DateTime date) {
     return "${date.day}/${date.month}/${date.year}";
   }
@@ -303,7 +251,6 @@ na view.
   void sendMessage({String? audioUrl}) async {
     //if (controller.text.isEmpty) return;
     try {
-      // sendText();
       await _chatService.sendMessage(
         message: controller.text,
         chatId: chat.id,
@@ -314,64 +261,20 @@ na view.
     } catch (e) {
       _log.e(e);
     }
-    //_scrollToEnd();
     notifyListeners();
   }
 
 //-------------audio recording ---------------
 
-  final recorder = FlutterSoundRecorder();
   bool canRecord = true;
-  bool isRecorderReady = false;
-
-  Future<void> initRecorder() async {
-    var status = await Permission.microphone.request();
-
-    if (status != PermissionStatus.granted) {
-      throw Exception('Microphone permission not granted');
-    }
-
-    await recorder.openRecorder();
-
-    isRecorderReady = true;
-
-    recorder.setSubscriptionDuration(const Duration(milliseconds: 500));
-  }
-
   void recordVoice() async {
-    bool isGranted = await Permission.microphone.isGranted;
-    if (isGranted == false) {
-      try {
-        initRecorder();
-      } on Exception catch (e) {
-        _log.e(e);
-        return;
-      }
-    }
-    if (!isRecorderReady) return;
-    if (recorder.isRecording) {
-//parando de gravar
-      final path = await recorder.stopRecorder();
-      final audioFile = File(path!);
-
-      try {
-        //upload do arquivo de voz no storage
-        final audioUrl = await uploadAudioFile(path);
-        sendMessage(audioUrl: audioUrl);
-      } on Exception catch (e) {
-        throw Exception(e);
-      }
-
-      _log.i('recorded audio: $audioFile');
-    } else {
-      // await record();
-      await recorder.startRecorder(toFile: 'audio');
-    }
-    notifyListeners();
+    File? file = await _recorderService.recordVoice();
+    if (file == null) return;
+    final audioUrl = await StorageUtils.uploadAudioFile(file);
+    sendMessage(audioUrl: audioUrl);
+    //notifyListeners();
   }
 }
-
-
 
 /*
 Aqui para tirar a dependencia do firestore no viewmodel, eu coloquei o listener la no service.
