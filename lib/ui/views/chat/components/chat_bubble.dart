@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/models/message_model.dart';
 import 'package:app_chat/services/audio_service.dart';
 import 'package:app_chat/services/local_storage_service.dart';
 import 'package:app_chat/ui/common/ui_helpers.dart';
 import 'package:app_chat/ui/utils/helpers.dart';
+import 'package:app_chat/ui/utils/utiis.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -63,12 +66,6 @@ class _ChatBubbleState extends State<ChatBubble> {
 
 //no metodo downloadAudio, na primeira vez o audio eh baixado em cache, em um arquivo temporario.
   //todo: utisl
-  String formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String minutes = twoDigits(duration.inMinutes.remainder(60));
-    String seconds = twoDigits(duration.inSeconds.remainder(60));
-    return "$minutes:$seconds";
-  }
 
   Future<void> playAudio() async {
     final audioPath = await locator<LocalStorageService>().getAudioPath(
@@ -192,6 +189,32 @@ class _ChatBubbleState extends State<ChatBubble> {
       );
     }
 
-    return widget.message.message != '' ? myText() : myAudio();
+    Widget myImage() {
+      return decContainer(
+        width: screenWidth(context) / 1.5,
+        color: Colors.blue,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8.0),
+          child: Image.file(
+            File(widget.message.imageUrl!),
+            fit: BoxFit.cover,
+            width: 150,
+            height: 150,
+          ),
+        ),
+      );
+    }
+
+    if (widget.message.message != '') {
+      return myText();
+    } else if (widget.message.audioUrl != '') {
+      return myAudio();
+    } else if (widget.message.videoUrl != '') {
+      //return myVideo();
+      return Container();
+    } else if (widget.message.imageUrl != '') {
+      return myImage();
+    }
+    return Container();
   }
 }

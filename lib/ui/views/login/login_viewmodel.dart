@@ -10,19 +10,9 @@ class LoginViewModel extends BaseViewModel {
   final _log = getLogger('LoginViewModel');
   final _navigationService = locator<NavigationService>();
   final _authService = locator<AuthService>();
-  // late final loginWithGoogle = _authService.signInWithGoogle;
-  // late final loginWithEmailAndPassword =
-  //     _authService.signInWithEmailAndPassword(email.text, password.text);
-  //late final loginWithApple = _authService.signInWithApple;
   final formKey = GlobalKey<FormState>();
   final email = TextEditingController();
   final password = TextEditingController();
-
-  // var maskFormatter = MaskTextInputFormatter(
-  //   mask: '###.###.###-##',
-  //   filter: {"#": RegExp(r'[0-9]')},
-  //   type: MaskAutoCompletionType.lazy,
-  // );
 
   void loginWithEmail() async {
     setBusy(true);
@@ -51,19 +41,4 @@ class LoginViewModel extends BaseViewModel {
     }
     setBusy(false);
   }
-
-  // void login(Future<UserCredential> loginMethod) async {
-  //   setBusy(true);
-  //   try {
-  //     await loginMethod;
-  //     // await _authService.signInWithGoogle();
-
-  //     if (_authService.currUser != null) {
-  //       await _navigationService.clearStackAndShow(Routes.homeView);
-  //     }
-  //   } on Exception catch (e) {
-  //     _log.e(e);
-  //   }
-  //   setBusy(false);
-  // }
 }

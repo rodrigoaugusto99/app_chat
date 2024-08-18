@@ -165,17 +165,16 @@ class ChatView extends StackedView<ChatViewModel> {
                   //     },
                   //   ),
                 ),
-                decContainer(
-                  // height: MediaQuery.of(context).viewInsets.bottom + 60,
-                  radius: 30,
-                  topPadding: 10,
-                  bottomPadding: 10,
-                  leftPadding: 24,
-                  color: Colors.grey[800],
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 5,
+                Row(
+                  children: [
+                    Expanded(
+                      child: decContainer(
+                        // height: MediaQuery.of(context).viewInsets.bottom + 60,
+                        radius: 30,
+                        topPadding: 10,
+                        bottomPadding: 10,
+                        leftPadding: 24,
+                        color: Colors.grey[800],
                         child: TextField(
                           onChanged: (_) => viewModel.onChanged(_),
                           cursorColor: Colors.white,
@@ -186,42 +185,55 @@ class ChatView extends StackedView<ChatViewModel> {
                           controller: viewModel.controller,
                         ),
                       ),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            if (viewModel.recorder!.isRecording)
-                              StreamBuilder<RecordingDisposition>(
-                                stream: viewModel.recorder!.onProgress,
-                                builder: (context, snapshot) {
-                                  final duration = snapshot.hasData
-                                      ? snapshot.data!.duration
-                                      : Duration.zero;
-                                  // Converte a duração para minutos e segundos
-                                  String twoDigits(int n) =>
-                                      n.toString().padLeft(2, '0');
-                                  final minutes = twoDigits(
-                                      duration.inMinutes.remainder(60));
-                                  final seconds = twoDigits(
-                                      duration.inSeconds.remainder(60));
+                    ),
+                    decContainer(
+                      radius: 30,
+                      height: 60,
+                      width: 60,
+                      color: Colors.orange,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: viewModel.canRecord
+                                ? viewModel.recordVoice
+                                : viewModel.sendMessage,
+                            child: viewModel.isRecording
+                                ? const Icon(
+                                    Icons.mic,
+                                    color: Colors.blueAccent,
+                                  )
+                                : Icon(
+                                    viewModel.canRecord
+                                        ? Icons.mic
+                                        : Icons.send,
+                                  ),
+                          ),
+                          if (viewModel.isRecording)
+                            StreamBuilder<RecordingDisposition>(
+                              stream: viewModel.recordingProgress,
+                              builder: (context, snapshot) {
+                                final duration = snapshot.hasData
+                                    ? snapshot.data!.duration
+                                    : Duration.zero;
+                                // Converte a duração para minutos e segundos
+                                String twoDigits(int n) =>
+                                    n.toString().padLeft(2, '0');
+                                final minutes =
+                                    twoDigits(duration.inMinutes.remainder(60));
+                                final seconds =
+                                    twoDigits(duration.inSeconds.remainder(60));
 
-                                  return styledText(
-                                    text: '$minutes:$seconds',
-                                  );
-                                },
-                              ),
-                            GestureDetector(
-                              onTap: viewModel.canRecord
-                                  ? viewModel.recordVoice
-                                  : viewModel.sendMessage,
-                              child: Icon(
-                                viewModel.canRecord ? Icons.mic : Icons.send,
-                              ),
+                                return styledText(
+                                  color: Colors.white,
+                                  text: '$minutes:$seconds',
+                                );
+                              },
                             ),
-                          ],
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
                 heightSeparator(10)
               ],

@@ -86,3 +86,42 @@ bem mais "leve" pra fazer download, doque ter que baixar algo da internet e depe
 
 entrou no chat, percorre por todas as mensagens que tem audioUrl, ve se elas ja estou baixadas, se nao, baixa.
 p ver se nao ta baixada, eh so verificar se existe um arquivo com o nome daquela mensagemId naquela pasta chatId.
+
+no caso das mensagens, videos e audios, vamos fazer o seguitne no que tange armazenamento de dados.:
+precisamos tirar esses arquivos do path_provider alguma hora. podemos decidir se vamos colocar uma data, por
+exemplo 1 mes. depois de um mes de baixado aquele arquivo, ele eh deletado localmente, e se o usuario visualizar aquele
+arquivo, vai aparecer um negocio preto com botao de download se for video ou imagem. se for audio, vai aparecer
+aquele botao de download azul. porem, lembremos que esses sao os icones que aparecem caso precisa baixar manualmente para rever 
+o arquivo. acho que devemos separar esses icones daqueles icones que indicam que estao sendo baixados logo quando os usuarios
+mandam a mensagem um pro outro. talvez esse icone deve ser exibido como isDownloading mesmo, ate mesmo quando o usuario pedir pra
+re-instalar o arquivo, vai settar como isDownloading. 
+
+temos que saber como deletar aquele arquivo localmente.Pode ser algo assincrono na api ou bnackend ou podemos, quando carregarmos as
+mensagens do usuario, pegar tipo, se tal msg for ha tal tempoo atras, entao deletar do path-provider.
+
+temos que ter cuidado no seguinte: tem uma logica de que, se eu entrar no chat e tal audio nao foi bbaixado, entao ele eh baixado.
+ISso nao pode acontecer caso tal arquivo nao esteja baixado pois foi deletado pelo tempo expirado.
+
+
+..to achando que pra ser mais rapido na exibicao das coisas, temos que deixar primeiro o usuario ver o arquivo pela itnernet mesmo,
+e por baixo dos panos a gente faz o download, e quando termionar o download a gente exibe sempre o conteudo do arquivo localmente. 
+
+
+hmmmmmm tipo, fazer isso no caso dos AUDIOS. agora, no caso dos videos e imagens, podemos primeiro  mostrar o arquivo com qualidade bem ruim de 
+proposito, pra ser carregado visualmente rapido, e quando baixar localmente, aparece normalmente, OUUUU, podemos exibir normalmente o network,
+mas sabendo da possibilidade que tem de, se for video, pode travar numa certa parte. Por isso, nesses casos de imagem ou video, mais precisamente
+video, talvez seria  bom mostrar o network normal e tbm sinalizar pro usuario que ao mesmo tempo o video esta sendo baixado. Por exemplo, no wpp, 
+aparece o icone de downloading no video, mas se vc clicar no video, vc consegue ver....OPA! consegue ver o que ja baixou localmente ou fica vendo
+o network? no caso de exibir o que ja foi baixado localmente, sera entao que vms usar o lance de streaming igual netflix? tipo comecar a exibir o video
+ que esta sendo baixado sem necessariamente ter baixado o video completamente?
+
+
+no caso dos audios, estamos baixando aqui e la soo qando passa pelo listener de entrar mensagem.
+
+porem no caso de audio e videos, acho que temos que carregar primeiro do nosso lado, tipo, vamos carregar la no storage, mas vai aparecer so pra gente
+essa imagem com o icone carregando. So depois que carrega la no banco, eh que chega no listener e o outro recebe a imagem networkzida que sera baixada
+aos poucos enquanto ele consegue visualizar networkmente ou streamamente(vendo ate onde ja baixou naquele momento).
+
+entao, mandariamos a imagem ou video no nosso chat apenas localmente com esse lance de mostrar carregamento. ou seja, no caso de imagem ou video, nao exibiriamos 
+pelo listener, mas ali na propria memoria, na lista. no nosso caso, acho que eh mais bonitinho mostrar o circularprogressindicator ali no cantinho, mostrando que ta sendo
+carregado e que o outro ainda nao viu. no caso de estar carregando e ja estar visivel pros dois, ai sim fica o loading no meio da imagem.

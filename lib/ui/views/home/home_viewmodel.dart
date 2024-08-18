@@ -55,6 +55,6 @@ class HomeViewModel extends BaseViewModel {
 
   Future<void> logout() async {
     await _authService.signOut();
-    _navigationService.replaceWithLoginView();
+    //_navigationService.replaceWithLoginView();
   }
 }

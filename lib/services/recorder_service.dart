@@ -1,20 +1,25 @@
 import 'dart:io';
+import 'package:app_chat/app/app.logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class RecorderService {
   FlutterSoundRecorder? recorder;
-  ValueNotifier<FlutterSoundRecorder?> recorderNotifier = ValueNotifier(null);
+  final _log = getLogger('RecorderService');
 
-  void init() {
-    recorder = FlutterSoundRecorder();
-    recorderNotifier.value = recorder;
+  final ValueNotifier<bool> isRecordingNotifier = ValueNotifier(false);
+
+  Stream<RecordingDisposition>? get recordingProgressStream =>
+      recorder?.onProgress;
+
+  void dispose() {
+    isRecordingNotifier.dispose();
   }
 
-  bool isRecorderReady = false;
+  Future<void> init() async {
+    recorder = FlutterSoundRecorder();
 
-  Future<void> initRecorder() async {
     var status = await Permission.microphone.request();
 
     if (status != PermissionStatus.granted) {
@@ -28,28 +33,25 @@ class RecorderService {
     recorder!.setSubscriptionDuration(const Duration(milliseconds: 500));
   }
 
+  bool isRecorderReady = false;
+
   Future<File?> recordVoice() async {
     bool isGranted = await Permission.microphone.isGranted;
-    // if (isGranted == false) {
-    //   try {
-    //     initRecorder();
-    //   } on Exception catch (e) {
-    //    // _log.e(e);
-    //     return;
-    //   }
-    // }
     if (isGranted == false) return null;
     if (!isRecorderReady) return null;
 
     //se ja esta gravando
     if (recorder!.isRecording) {
       final path = await recorder!.stopRecorder();
-      //isRecording.value = false;
+      isRecordingNotifier.value =
+          false; // Atualiza o ValueNotifier de isRecording
       final audioFile = File(path!);
       return audioFile;
     } else {
       await recorder!.startRecorder(toFile: 'audio');
-      //isRecording.value = true;
+      isRecordingNotifier.value =
+          true; // Atualiza o ValueNotifier de isRecording
+      _log.i('recording');
     }
     return null;
   }

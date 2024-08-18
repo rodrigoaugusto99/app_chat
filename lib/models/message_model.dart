@@ -7,6 +7,8 @@ class MessageModel {
   UserModel? user;
   String? message;
   String? audioUrl;
+  String? videoUrl;
+  String? imageUrl;
   Timestamp createdAt;
   bool isDownloading;
   bool hasError;
@@ -16,6 +18,8 @@ class MessageModel {
     required this.senderId,
     this.message,
     this.audioUrl,
+    this.videoUrl,
+    this.imageUrl,
     this.isDownloading = false,
     this.hasError = false,
     required this.createdAt,
@@ -27,6 +31,8 @@ class MessageModel {
       senderId: doc['senderId'],
       message: doc['message'],
       audioUrl: doc['audioUrl'],
+      imageUrl: doc['imageUrl'],
+      videoUrl: doc['videoUrl'],
       createdAt: doc['createdAt'],
     );
   }
@@ -36,6 +42,8 @@ class MessageModel {
       senderId: map['senderId'],
       message: map['message'],
       createdAt: map['createdAt'],
+      imageUrl: map['imageUrl'],
+      videoUrl: map['videoUrl'],
       audioUrl: map['audioUrl'],
     );
   }

@@ -1,7 +1,9 @@
 import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/app/app.router.dart';
+import 'package:app_chat/services/audio_service.dart';
 import 'package:app_chat/services/auth_service.dart';
-import 'package:app_chat/services/chat_service.dart';
+import 'package:app_chat/services/local_storage_service.dart';
+import 'package:app_chat/services/recorder_service.dart';
 import 'package:app_chat/services/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:stacked/stacked.dart';
@@ -16,7 +18,10 @@ class StartupViewModel extends BaseViewModel {
     await Future.delayed(const Duration(milliseconds: 200));
 
     notifyListeners();
+    locator<AudioService>().init();
+    await locator<RecorderService>().init();
     await locator<AuthService>().init();
+    await locator<LocalStorageService>().init();
 
     //await Future.delayed(const Duration(milliseconds: 1200));
     if (FirebaseAuth.instance.currentUser != null) {

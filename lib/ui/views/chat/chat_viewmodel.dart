@@ -10,8 +10,10 @@ import 'package:app_chat/services/local_storage_service.dart';
 import 'package:app_chat/services/recorder_service.dart';
 import 'package:app_chat/services/user_service.dart';
 import 'package:app_chat/ui/utils/storage_utils.dart';
+import 'package:app_chat/ui/utils/utiis.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/public/flutter_sound_recorder.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:stacked/stacked.dart';
 
 class MessagesByDay {
@@ -34,7 +36,7 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     screenHeight = MediaQuery.of(context).size.height;
     //isRecording = _recorderService.recorder.isRecording;
-    _recorderService.recorderNotifier.addListener(() {
+    _recorderService.isRecordingNotifier.addListener(() {
       notifyListeners();
     });
   }
@@ -42,7 +44,9 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
 //?nao seria melhor pegar o recorder inteiro, ai ja teria acesso ao isPaused tbm etc.
 //! mas ai essa viewModel dependeria do pacote, pois teriamos que instanciar o tipo FlutterSoundRecorder...
   //fodase, vou depender msm
-  FlutterSoundRecorder? get recorder => _recorderService.recorderNotifier.value;
+  bool get isRecording => _recorderService.isRecordingNotifier.value;
+  Stream<RecordingDisposition>? get recordingProgress =>
+      _recorderService.recordingProgressStream;
   // FocusNode focus = FocusNode();
 
   ScrollController scrollController = ScrollController();
@@ -58,7 +62,7 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
   UserModel? myUser;
   StreamSubscription? _subscription;
 
-  final localStorageService = locator<LocalStorageService>();
+  final _localStorageService = locator<LocalStorageService>();
   final _recorderService = locator<RecorderService>();
 //!
 //!vou precisar fzr funcao de voltar manualmente pro back do appbar e pro willpop
@@ -77,6 +81,8 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
     if (_subscription == null) return;
     _subscription!.cancel();
     _chatService.disposeListener();
+    //_recorderService.dispose();
+    // _localStorageService.dispose();
   }
 
 //chamado quando muda o tasmanhho do layout (qnd abre teclado)
@@ -136,14 +142,11 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     notifyListeners();
     _chatService.setChatListener(chat, (newMessage) {
       if (newMessage.audioUrl != '') {
-        newMessage.isDownloading = true;
-        _log.f('isDownloading = true');
-        notifyListeners();
-        download(newMessage);
+        downloadAudio(newMessage);
       }
       //adicionando a nova mensagem na lista de mensagens do MessagesByModel de HOJE.
       DateTime now = DateTime.now();
-      String nowFormatted = _formatDate(now);
+      String nowFormatted = formatDate(now);
       //temos que saber qual eh o grupo de dias que vms colocar a nova mensagem.
       MessagesByDay todayMessages =
           messagesGroupedByDays!.firstWhere((msg) => msg.day == nowFormatted);
@@ -159,19 +162,21 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     //to checando em outro loop pra nao atrapalhar ou enlerdar o loop de todas as mensagens.
     //checando as mensagens de audio
     for (var audio in audiosToCheck) {
-      bool isDowloaded = await localStorageService.checkIfAudioIsDownloaded(
+      bool isDowloaded = await _localStorageService.checkIfAudioIsDownloaded(
         message: audio,
         chatId: chat.id,
       );
       if (!isDowloaded) {
-        download(audio);
+        downloadAudio(audio);
       }
     }
   }
 
-  Future<void> download(MessageModel message) async {
-    //message.isDownloading = true;
-    final fileDownloaded = await localStorageService.downloadAudio(
+  Future<void> downloadAudio(MessageModel message) async {
+    message.isDownloading = true;
+    _log.f('isDownloading = true');
+    notifyListeners();
+    final fileDownloaded = await _localStorageService.downloadAudio(
       audioUrl: message.audioUrl!,
       chatId: chat.id,
       messageId: message.id!,
@@ -206,7 +211,7 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 
     for (var msg in allMessages) {
       DateTime date = msg.createdAt.toDate();
-      String formattedDate = _formatDate(date);
+      String formattedDate = formatDate(date);
 
       if (!groupedByDate.containsKey(formattedDate)) {
         groupedByDate[formattedDate] = [];
@@ -225,11 +230,6 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     return extractDays;
   }
 
-//todo: utils
-  String _formatDate(DateTime date) {
-    return "${date.day}/${date.month}/${date.year}";
-  }
-
   void onChanged(String value) {
     if (controller.text.isEmpty) {
       canRecord = true;
@@ -239,7 +239,8 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     notifyListeners();
   }
 
-  void sendMessage({String? audioUrl}) async {
+  void sendMessage(
+      {String? audioUrl, String? imageUrl, String? videoUrl}) async {
     //if (controller.text.isEmpty) return;
     try {
       await _chatService.sendMessage(
@@ -255,8 +256,6 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     notifyListeners();
   }
 
-//-------------audio recording ---------------
-
   bool canRecord = true;
   void recordVoice() async {
     File? file = await _recorderService.recordVoice();
@@ -264,6 +263,51 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     final audioUrl = await StorageUtils.uploadAudioFile(file);
     sendMessage(audioUrl: audioUrl);
     //notifyListeners();
+  }
+
+  Future<void> sendImageOrVideo() async {
+    //pick image or video
+    final xFile = await pickMedia();
+
+    // Identificar se é uma imagem ou um vídeo
+    String mimeType = xFile!.mimeType!;
+
+    File mediaFile = File(xFile.path);
+
+    if (mimeType.startsWith('video/')) {
+      // É um vídeo
+      //upload storage
+      String url = await StorageUtils.uploadVideoFile(mediaFile);
+      //send url message
+      sendMessage(videoUrl: url);
+    } else if (mimeType.startsWith('image/')) {
+      // É uma imagem
+      //upload storage
+      String url = await StorageUtils.uploadImageFile(mediaFile);
+      //send url message
+      sendMessage(imageUrl: url);
+    } else {
+      _log.e('Nao eh video nem imagem');
+      //thorw exception escolha video ou uma imagem
+    }
+  }
+
+  Future<XFile?> pickMedia() async {
+    final ImagePicker picker = ImagePicker();
+
+    // Permite que o usuário escolha qualquer tipo de mídia (imagem ou vídeo)
+    final XFile? file = await picker.pickImage(
+      source: ImageSource.gallery,
+      // Aqui usamos pickImage, que permite ao usuário escolher tanto imagem quanto vídeo
+    );
+
+    if (file == null) {
+      _log.i('Nenhuma mídia foi selecionada.');
+      return null;
+    }
+
+    //File mediaFile = File(file.path);
+    return file;
   }
 }
 

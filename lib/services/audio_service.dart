@@ -1,15 +1,19 @@
 import 'package:audioplayers/audioplayers.dart';
 
 class AudioService {
-  AudioPlayer audioPlayer = AudioPlayer();
+  AudioPlayer? audioPlayer;
 
-  void init() {}
+  void init() {
+    audioPlayer = AudioPlayer();
+  }
 
   Future setAudio() async {
-    audioPlayer.setReleaseMode(ReleaseMode.stop);
+    audioPlayer!.setReleaseMode(ReleaseMode.stop);
   }
 
   Future<void> playAudio(String filePath) async {
-    await audioPlayer.play(UrlSource(filePath));
+    await audioPlayer!.play(UrlSource(filePath));
   }
 }
+//todo: no  throw exception colocar mensagens fofas
+//todo:no _log.e, colocar o erro pro dev
