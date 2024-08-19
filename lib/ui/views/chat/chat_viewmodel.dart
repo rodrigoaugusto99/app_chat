@@ -147,13 +147,26 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
       //adicionando a nova mensagem na lista de mensagens do MessagesByModel de HOJE.
       DateTime now = DateTime.now();
       String nowFormatted = formatDate(now);
-      //temos que saber qual eh o grupo de dias que vms colocar a nova mensagem.
-      MessagesByDay todayMessages =
+
+      MessagesByDay? todayMessages;
+
+      if (messagesGroupedByDays!.isEmpty) {
+        todayMessages = MessagesByDay(
+          day: nowFormatted,
+          messages: [],
+        );
+        messagesGroupedByDays!.add(todayMessages);
+      }
+      todayMessages =
           messagesGroupedByDays!.firstWhere((msg) => msg.day == nowFormatted);
       messages!.add(newMessage);
 
-      // Se o grupo do dia de hoje existe, adicione a nova mensagem a ele
       todayMessages.messages.add(newMessage);
+
+      //temos que saber qual eh o grupo de dias que vms colocar a nova mensagem.
+
+      // Se o grupo do dia de hoje existe, adicione a nova mensagem a ele
+
       notifyListeners();
     });
 

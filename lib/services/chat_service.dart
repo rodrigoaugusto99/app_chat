@@ -265,6 +265,18 @@ class ChatService {
 
       DocumentReference chatRef = await chats.add(chatData);
 
+      //atribuir chatId ao usuario
+      final docRef = firestore.collection('users').doc(receiverId);
+      final myDocRef = firestore.collection('users').doc(_userService.user.id);
+
+      await docRef.update({
+        'chatIds': FieldValue.arrayUnion([chatRef.id]),
+      });
+
+      await myDocRef.update({
+        'chatIds': FieldValue.arrayUnion([chatRef.id]),
+      });
+
       //! primeiro eh criado sem a subcollection messages, isso eh criado na primeira msg
 
       // if (!chatDoc.) {
@@ -287,6 +299,8 @@ class ChatService {
     String? message,
     required String chatId,
     String? audioUrl,
+    String? videoUrl,
+    String? imageUrl,
   }) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -299,6 +313,8 @@ class ChatService {
         'senderId': _userService.user.id!,
         'message': message ?? '',
         'audioUrl': audioUrl ?? '',
+        'videoUrl': videoUrl ?? '',
+        'imageUrl': imageUrl ?? '',
         //'createdAt': FieldValue.serverTimestamp(),
 
         'createdAt': Timestamp.fromDate(DateTime.now()),
