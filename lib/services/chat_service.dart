@@ -295,7 +295,7 @@ class ChatService {
   }
 
 //?send message
-  Future<void> sendMessage({
+  Future<String> sendMessage({
     String? message,
     required String chatId,
     String? audioUrl,
@@ -320,7 +320,9 @@ class ChatService {
         'createdAt': Timestamp.fromDate(DateTime.now()),
       };
 
-      messagesRef.add(messageDoc);
+      final messageRef = await messagesRef.add(messageDoc);
+      //retornando o id da mensagem criada.
+      return messageRef.id;
       // return MessageModel.fromMap(messageDoc);
     } on Exception catch (e) {
       throw AppError(message: e.toString());

@@ -4,6 +4,7 @@ import 'package:app_chat/models/message_model.dart';
 import 'package:app_chat/services/http_service.dart';
 import 'package:path_provider/path_provider.dart';
 
+//todo: separar downloads por tipos nas pastas
 class LocalStorageService {
   final _htppService = locator<HttpService>();
 
@@ -80,5 +81,54 @@ class LocalStorageService {
       throw Exception('Arquivo nao existe');
     }
     return filePath;
+  }
+
+//copy local file
+  Future<void> saveMyMediaWithPathProvider({
+    required String chatId,
+    required String messageId,
+    required File file,
+  }) async {
+    File originalFile = File(file.path);
+
+    // Gerar um novo caminho para o arquivo dentro do diretório do aplicativo
+    final String newPath = '${directory!.path}/$chatId/$messageId.aac';
+
+    // Copiar o arquivo para o diretório interno
+    final File savedFile = await originalFile.copy(newPath);
+
+    // Agora você pode usar savedFile.path para exibir ou enviar o arquivo
+    print('Arquivo salvo no caminho: ${savedFile.path}');
+  }
+
+//download
+  Future<String?> downloadImage({
+    required String chatId,
+    required String imageUrl,
+    required String messageId,
+  }) async {
+    // Obtém o diretório local para armazenar o arquivo
+    try {
+      final directoryPath = '${directory!.path}/$chatId';
+      final filePath = '$directoryPath/$messageId.jpg';
+
+      // Cria a subpasta, se ela não existir
+      final dir = Directory(directoryPath);
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+
+      // Faz o download do arquivo
+      final response = await _htppService.get(imageUrl);
+      final file = File(filePath);
+
+      // Salva o arquivo localmente
+      await file.writeAsBytes(response.bodyBytes);
+      return filePath;
+    } on Exception catch (e) {
+      // _log.e(e);
+      // return null;
+      throw Exception(e);
+    }
   }
 }

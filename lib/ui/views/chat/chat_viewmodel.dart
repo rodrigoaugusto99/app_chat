@@ -141,9 +141,24 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 
     notifyListeners();
     _chatService.setChatListener(chat, (newMessage) {
+      /*
+      funcoes da viewModel que chamam funcao do service.
+      Nessas funcoes, o intuito principal eh manipular
+      o valor de "isDownloading" do arquivo para
+      refletir na view.
+       */
       if (newMessage.audioUrl != '') {
         downloadAudio(newMessage);
+      } else if (newMessage.imageUrl != '') {
+        downloadImage(newMessage);
       }
+
+/*todo: se for um video ou imagem que EU mandei, entao usar o: 
+(usa metodo copy pois tenho o arquivo no meu celular).
+Que ja foi usado com sucesso la no */
+
+//todo: se o senderId nao for o meu, entao baixar (baixar com httpo arquivo la da url do firestore que eh do storage)
+
       //adicionando a nova mensagem na lista de mensagens do MessagesByModel de HOJE.
       DateTime now = DateTime.now();
       String nowFormatted = formatDate(now);
@@ -209,6 +224,30 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     notifyListeners();
   }
 
+  Future<void> downloadImage(MessageModel message) async {
+    message.isDownloading = true;
+    _log.f('isDownloading = true');
+    notifyListeners();
+    final fileDownloaded = await _localStorageService.downloadImage(
+      chatId: chat.id,
+      imageUrl: message.imageUrl!,
+      messageId: message.id!,
+    );
+    if (fileDownloaded == null) {
+      _log.e('falha ao baixar mensagem ${message.id}');
+      message.isDownloading = false;
+      _log.f('isDownloading = false');
+      //se der erro, setar esse bool de erro pra mostrar um simbolo de erro nessa mensagem.
+      message.hasError = true;
+      return;
+    }
+    //se nao deu erro, ou seja, nao retornou null naquele metodo, entao tirar esse bool true.
+    //ai la no bubble, mostraremos a setinha ao inves do simbolo de estar baixando.
+    message.isDownloading = false;
+    _log.f('isDownloading = false');
+    notifyListeners();
+  }
+
   Future<void> _scrollToEnd() async {
     if (!scrollController.hasClients) return;
     scrollController.jumpTo(scrollController.position.minScrollExtent);
@@ -252,21 +291,29 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     notifyListeners();
   }
 
-  void sendMessage(
-      {String? audioUrl, String? imageUrl, String? videoUrl}) async {
+  Future<String?> sendMessage({
+    String? audioUrl,
+    String? imageUrl,
+    String? videoUrl,
+  }) async {
     //if (controller.text.isEmpty) return;
     try {
-      await _chatService.sendMessage(
+      final messageId = await _chatService.sendMessage(
         message: controller.text,
         chatId: chat.id,
         audioUrl: audioUrl,
+        imageUrl: imageUrl,
+        videoUrl: videoUrl,
       );
-      // controller.clear();
       controller.text = '';
+      notifyListeners();
+      return messageId;
+
+      // controller.clear();
     } catch (e) {
       _log.e(e);
+      return null;
     }
-    notifyListeners();
   }
 
   bool canRecord = true;
@@ -278,6 +325,7 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     //notifyListeners();
   }
 
+//apenas manda a iimagem ou video no chat quando terminar download pro storage
   Future<void> sendImageOrVideo() async {
     //pick image or video
     final xFile = await pickMedia();
@@ -287,12 +335,23 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 
     File mediaFile = File(xFile.path);
 
+//todo: need to uuid messageId param.
+    //copy file to path_provider
+
     if (mimeType.startsWith('video/')) {
       // É um vídeo
-      //upload storage
+      //?upload storage
+
       String url = await StorageUtils.uploadVideoFile(mediaFile);
       //send url message
-      sendMessage(videoUrl: url);
+      String? messageId = await sendMessage(videoUrl: url);
+      if (messageId == null) return;
+      //?upload local storage
+      _localStorageService.saveMyMediaWithPathProvider(
+        chatId: chat.id,
+        file: mediaFile,
+        messageId: messageId,
+      );
     } else if (mimeType.startsWith('image/')) {
       // É uma imagem
       //upload storage

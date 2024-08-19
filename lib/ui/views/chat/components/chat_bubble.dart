@@ -190,17 +190,23 @@ class _ChatBubbleState extends State<ChatBubble> {
     }
 
     Widget myImage() {
+      //todo: exibir a imagem de acordo com as suas proprias dimensoes
       return decContainer(
-        width: screenWidth(context) / 1.5,
+        width: screenWidth(context) / 2,
         color: Colors.blue,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8.0),
-          child: Image.file(
-            File(widget.message.imageUrl!),
-            fit: BoxFit.cover,
-            width: 150,
-            height: 150,
-          ),
+          child: widget.message.isDownloading
+              ? decContainer(
+                  color: Colors.grey,
+                  child: const CircularProgressIndicator(),
+                )
+              : Image.file(
+                  File(widget.message.imageUrl!),
+                  fit: BoxFit.cover,
+                  // width: 150,
+                  // height: 150,
+                ),
         ),
       );
     }
