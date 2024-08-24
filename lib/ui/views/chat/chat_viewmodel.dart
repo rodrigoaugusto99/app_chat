@@ -16,6 +16,7 @@ import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:stacked/stacked.dart';
 import 'package:path/path.dart' as path;
+import 'package:uuid/uuid.dart';
 
 class MessagesByDay {
   final String day;
@@ -320,6 +321,7 @@ Que ja foi usado com sucesso la no */
     String? audioUrl,
     String? imageUrl,
     String? videoUrl,
+    String? generatedIdForMessage,
   }) async {
     //if (controller.text.isEmpty) return;
     try {
@@ -329,6 +331,7 @@ Que ja foi usado com sucesso la no */
         audioUrl: audioUrl,
         imageUrl: imageUrl,
         videoUrl: videoUrl,
+        futureId: generatedIdForMessage,
       );
       controller.text = '';
       notifyListeners();
@@ -342,6 +345,7 @@ Que ja foi usado com sucesso la no */
   }
 
   bool canRecord = true;
+
   void recordVoice() async {
     File? file = await _recorderService.recordVoice();
     if (file == null) return;
@@ -349,6 +353,8 @@ Que ja foi usado com sucesso la no */
     sendMessage(audioUrl: audioUrl);
     //notifyListeners();
   }
+
+  var uuid = const Uuid();
 
 //apenas manda a iimagem ou video no chat quando terminar download pro storage
   Future<void> sendImageOrVideo() async {
@@ -375,37 +381,51 @@ Que ja foi usado com sucesso la no */
     }
 
     File mediaFile = File(xFile.path);
-
+    String myUuid = uuid.v4();
     //copy file to path_provider
     if (type == 'video') {
       // É um vídeo
-      //?upload storage
 
-      String url = await StorageUtils.uploadVideoFile(mediaFile);
-      //send url message
-      String? messageId = await sendMessage(videoUrl: url);
-      if (messageId == null) return;
+      //sem await mesmo pq vai ser mais rapido que o uploadFile provavelmente
       //?upload local storage
-      await _localStorageService.saveMyMediaWithPathProvider(
+      _localStorageService.saveMyMediaWithPathProvider(
         isVideo: true,
         chatId: chat.id,
         file: mediaFile,
-        messageId: messageId,
+        messageId: myUuid,
       );
+
+//?upload storage
+      String url = await StorageUtils.uploadVideoFile(mediaFile);
+
+      //send url message
+      String? messageId = await sendMessage(
+        videoUrl: url,
+        generatedIdForMessage: myUuid,
+      );
+      if (messageId != myUuid) {
+        _log.f('ERRO FATAL !');
+      }
     } else if (type == 'image') {
       // É uma imagem
-      //?upload storage
-      String url = await StorageUtils.uploadImageFile(mediaFile);
-      //send url message
-      String? messageId = await sendMessage(imageUrl: url);
-      if (messageId == null) return;
-      //?upload local storage
+//?upload local storage
       await _localStorageService.saveMyMediaWithPathProvider(
         isImage: true,
         chatId: chat.id,
         file: mediaFile,
-        messageId: messageId,
+        messageId: myUuid,
       );
+
+      //?upload storage
+      String url = await StorageUtils.uploadImageFile(mediaFile);
+      //send url message
+      String? messageId = await sendMessage(
+        imageUrl: url,
+        generatedIdForMessage: myUuid,
+      );
+      if (messageId != myUuid) {
+        _log.f('ERRO FATAL !');
+      }
     } else {
       _log.e('Nao eh video nem imagem');
       //thorw exception escolha video ou uma imagem

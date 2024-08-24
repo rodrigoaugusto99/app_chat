@@ -125,3 +125,20 @@ aos poucos enquanto ele consegue visualizar networkmente ou streamamente(vendo a
 entao, mandariamos a imagem ou video no nosso chat apenas localmente com esse lance de mostrar carregamento. ou seja, no caso de imagem ou video, nao exibiriamos 
 pelo listener, mas ali na propria memoria, na lista. no nosso caso, acho que eh mais bonitinho mostrar o circularprogressindicator ali no cantinho, mostrando que ta sendo
 carregado e que o outro ainda nao viu. no caso de estar carregando e ja estar visivel pros dois, ai sim fica o loading no meio da imagem.
+
+
+Estou  recebendo as mensagens com imagens no listener e tratando de acordo com o fato de ter sido enviada por
+mim ou nao. Se foi enviada por mim, entao antes mesmo de enviar a mensagem, alem de fzr o upload  do arquivo pra nuvem,
+eu copiei para um arquivo local. Dessa forma, quando o listener capturar essa mensagem, vai ver que o senderId
+nao eh o meu, entao nao vai fazer o download(remoto) de mensagem e depois o download local da mensagem, pois isso
+vai ser tarefa do usuario que recebeu a mensagem. Depois de receber a imagem no listener, vai ser chamado um novo 
+ChatBubble, e o bagulho vai receber essa nova mensagem. Ele vai ver que eh do tipo imagem e vai chamar o 
+getImagePath para mostrar a imagem. Atualmente, nao esta dando tempo de baixar minha propria imagem localmente
+antes do listener capturar a mensagem, pois atualmente, do jeito que eu fiz, eu preciso do criar o documento no
+ firestore para recuperar o id gerado e ai sim fazer o download local da mensagem usando aquele id como o "nome"
+do arquivo que vai ser baixado no meu dispositivo. porem, para ter mais controle sobre isso e nao depender
+do firestore para ter um id, entao vou criar o proprio id da mensagem pra poder fazer o download localmente
+primeiro ou ao mesmo tempo em que faz o upload. Dessa forma, nao preciso mandar o bagulho pro firestore antes, e 
+consigo apenas mandar depois de ja ter feito o download local, diminuindo as chances de demorar mto pra fazer
+o downlaod local e fazer com que o bubble escolha exibir a mensagem com image.network ao inves do image.file, que
+eh mais "rapido".

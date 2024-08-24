@@ -301,6 +301,7 @@ class ChatService {
     String? audioUrl,
     String? videoUrl,
     String? imageUrl,
+    String? futureId,
   }) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -319,11 +320,16 @@ class ChatService {
 
         'createdAt': Timestamp.fromDate(DateTime.now()),
       };
-
-      final messageRef = await messagesRef.add(messageDoc);
-      //retornando o id da mensagem criada.
-      return messageRef.id;
-      // return MessageModel.fromMap(messageDoc);
+//todo: se existir futureId, respeita-lo aqui.
+      if (futureId == null) {
+        final messageRef = await messagesRef.add(messageDoc);
+        //retornando o id da mensagem criada.
+        return messageRef.id;
+        // return MessageModel.fromMap(messageDoc);
+      } else {
+        await messagesRef.doc(futureId).set(messageDoc);
+        return futureId;
+      }
     } on Exception catch (e) {
       throw AppError(message: e.toString());
     }
