@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:app_chat/app/app.locator.dart';
+import 'package:app_chat/app/app.logger.dart';
 import 'package:app_chat/models/message_model.dart';
 import 'package:app_chat/services/audio_service.dart';
 import 'package:app_chat/services/local_storage_service.dart';
@@ -9,6 +10,8 @@ import 'package:app_chat/ui/utils/utiis.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
+final _log = getLogger('ChatBubble');
 
 class ChatBubble extends StatefulWidget {
   final String chatId;
@@ -42,15 +45,43 @@ class _ChatBubbleState extends State<ChatBubble> {
     }
   }
 
-  String? imagePath;
+  String? imagePath = '';
 
   Future<void> initImage() async {
-    imagePath = await locator<LocalStorageService>().getFilePath(
+    //se eu colocar esse delay, da tempo de esperar o downlaod local antes de pegar o arquivo.
+    //se la retornou null, entao eu aqui na view la no build eu chamo o image.network
+    //todo: e se eu fizer um singleton com os downloads? ai eu teria acesso aqui tbm no loading p baixar local
+    // await Future.delayed(const Duration(seconds: 2));
+    final newImagePath = await locator<LocalStorageService>().getImagePath(
       chatId: widget.chatId,
       messageId: widget.message.id!,
     );
+    _log.v('image path from getImagePath(): $newImagePath');
+    imagePath = newImagePath;
+    if (imagePath == null) {
+      /*isso acontece na primeira vez, que entra no listener essa mensagem.
+      pois a mensagem ja foi enviada para o firestore e pegamos o snapshot com
+      o listener antes mesmo de salvarmos essa foto localmente. 
+      
+      //!e se eu colocasse delay de 500 milisegundos pra carregar a imagem? 
+      isso pode dar tempo, mas se for uma imagem mt grande, capaz de n ter problema tbm,
+      tipo ql o problema de ver imagem pela internet so naquele momento raro?
+
+      mas...se for video, demora mais para baixar, entao nao deve valer a pena colocar
+      esse delay. Que tal chamarmos o metodo de getVideoPath de tal segundo em tal segundo,
+      e vamos ficar ouvindo as respostas. enquanto continuar retornando null, estamos exibindo
+      o arquivo com network, mas no primeiro momento que retornar o caminho, entao podemos 
+      atribuir o videoPath e chamar o setState pra comecar a usar o arquivo local ao inves do remoto.
+      */
+      _log.f('usando image.network');
+    }
     setState(() {});
-    //todo: se for null, eu poderia ja ter baixado la no chatviewmodel ne
+    //todo: se for null, eu poderia ja ter baixado la no chatviewmodel ne ou service??!?!?! ui !
+    //nem da, pq de qlqr forma temos que fazer o doc p pegar o id da mensagem pra poder ai sim
+//fazer o download com o arquivo com o nome correto, e nao tem await que faca o listener nao
+//capturar quando esse novo doc for criado.
+
+//a n ser que eu faca o id ser gerado por uuid p eu ter mais controle sobre isso
 
 //     if (imagePath == null) {
 // //se nao tem o arquivo, mostrar pela internet mesmo
@@ -93,20 +124,20 @@ class _ChatBubbleState extends State<ChatBubble> {
   //todo: utisl
 
   Future<void> playAudio() async {
-    final audioPath = await locator<LocalStorageService>().getFilePath(
+    final audioPath = await locator<LocalStorageService>().getAudioPath(
       chatId: widget.chatId,
       messageId: widget.message.id!,
     );
     await locator<AudioService>().playAudio(audioPath!);
   }
 
-  Future<String?> getImagePath() async {
-    final imagePath = await locator<LocalStorageService>().getFilePath(
-      chatId: widget.chatId,
-      messageId: widget.message.id!,
-    );
-    return imagePath;
-  }
+  // Future<String?> getImagePath() async {
+  //   final imagePath = await locator<LocalStorageService>().getImagePath(
+  //     chatId: widget.chatId,
+  //     messageId: widget.message.id!,
+  //   );
+  //   return imagePath;
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -222,6 +253,35 @@ class _ChatBubbleState extends State<ChatBubble> {
       );
     }
 
+    Widget myImage() {
+      //todo: exibir a imagem de acordo com as suas proprias dimensoes
+      return decContainer(
+        width: screenWidth(context) / 2,
+        color: Colors.blue,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8.0),
+          child: widget.message.isDownloading || imagePath == ''
+              ? decContainer(
+                  color: Colors.grey,
+                  child: const CircularProgressIndicator(),
+                )
+              : imagePath != null
+                  ? Image.file(
+                      File(imagePath!),
+                      fit: BoxFit.cover,
+                      // width: 150,
+                      // height: 150,
+                    )
+                  : Image.network(
+                      widget.message.imageUrl!,
+                      fit: BoxFit.cover,
+                      // width: 150,
+                      // height: 150,
+                    ),
+        ),
+      );
+    }
+
     // Widget myImage() {
     //   //todo: exibir a imagem de acordo com as suas proprias dimensoes
     //   return decContainer(
@@ -235,53 +295,23 @@ class _ChatBubbleState extends State<ChatBubble> {
     //               color: Colors.grey,
     //               child: const CircularProgressIndicator(),
     //             )
-    //           : imagePath != null
-    //               ? Image.file(
-    //                   File(imagePath!),
-    //                   fit: BoxFit.cover,
-    //                   // width: 150,
-    //                   // height: 150,
-    //                 )
-    //               : Image.network(
-    //                   widget.message.imageUrl!,
-    //                   fit: BoxFit.cover,
-    //                   // width: 150,
-    //                   // height: 150,
-    //                 ),
+    //           : FutureBuilder<String?>(
+    //               future: getImagePath(),
+    //               builder: (context, snapshot) {
+    //                 if (snapshot.connectionState == ConnectionState.waiting) {
+    //                   return const CircularProgressIndicator();
+    //                 } else if (snapshot.hasError || !snapshot.hasData) {
+    //                   // Fallback para Image.network se o arquivo local não for encontrado ou houve erro
+    //                   return Image.network(widget.message.imageUrl!);
+    //                 } else {
+    //                   // Exibe a imagem localmente
+    //                   return Image.file(File(snapshot.data!));
+    //                 }
+    //               },
+    //             ),
     //     ),
     //   );
     // }
-
-    Widget myImage() {
-      //todo: exibir a imagem de acordo com as suas proprias dimensoes
-      return decContainer(
-        width: screenWidth(context) / 2,
-        color: Colors.blue,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8.0),
-          child: widget.message.isDownloading
-              ? decContainer(
-                  //todo: FutureBuilder.
-                  color: Colors.grey,
-                  child: const CircularProgressIndicator(),
-                )
-              : FutureBuilder<String?>(
-                  future: getImagePath(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const CircularProgressIndicator();
-                    } else if (snapshot.hasError || !snapshot.hasData) {
-                      // Fallback para Image.network se o arquivo local não for encontrado ou houve erro
-                      return Image.network(widget.message.imageUrl!);
-                    } else {
-                      // Exibe a imagem localmente
-                      return Image.file(File(snapshot.data!));
-                    }
-                  },
-                ),
-        ),
-      );
-    }
 
     if (widget.message.message != '') {
       return myText();

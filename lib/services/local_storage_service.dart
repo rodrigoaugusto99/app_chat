@@ -1,11 +1,14 @@
 import 'dart:io';
 import 'package:app_chat/app/app.locator.dart';
+import 'package:app_chat/app/app.logger.dart';
 import 'package:app_chat/models/message_model.dart';
 import 'package:app_chat/services/http_service.dart';
 import 'package:path_provider/path_provider.dart';
 
 //todo: separar downloads por tipos nas pastas
 class LocalStorageService {
+  final _log = getLogger('LocalStorageService');
+
   final _htppService = locator<HttpService>();
 
   Directory? directory;
@@ -66,7 +69,7 @@ class LocalStorageService {
     return true;
   }
 
-  Future<String?> getFilePath({
+  Future<String?> getAudioPath({
     required String chatId,
     required String messageId,
   }) async {
@@ -83,22 +86,62 @@ class LocalStorageService {
     return filePath;
   }
 
+  Future<String?> getImagePath({
+    required String chatId,
+    required String messageId,
+  }) async {
+    final filePath = '${directory!.path}/$chatId/$messageId.jpg';
+
+    final file = File(filePath);
+
+    bool fileExists = await file.exists();
+    //_log.i(file);
+
+    if (!fileExists) {
+      //throw Exception('Arquivo nao existe');
+      _log.e('Arquivo nao encontrado: $filePath');
+      return null;
+    }
+    _log.i('Arquivo encontrado!: $filePath');
+    return filePath;
+  }
+
 //copy local file
   Future<void> saveMyMediaWithPathProvider({
     required String chatId,
     required String messageId,
     required File file,
+    bool isImage = false,
+    bool isVideo = false,
   }) async {
     File originalFile = File(file.path);
+    String thisExtension = '';
+
+    if (isImage) {
+      thisExtension = 'jpg';
+    }
+    if (isVideo) {
+      thisExtension = 'mp4';
+    }
 
     // Gerar um novo caminho para o arquivo dentro do diretório do aplicativo
-    final String newPath = '${directory!.path}/$chatId/$messageId.aac';
+    final String newPath =
+        '${directory!.path}/$chatId/$messageId.$thisExtension';
+
+    final String directoryPath = '${directory!.path}/$chatId';
+
+    // Verificar se o diretório existe; se não, criar o diretório
+    final Directory targetDirectory = Directory(directoryPath);
+    if (!await targetDirectory.exists()) {
+      _log.f('targetDirectory.create');
+      await targetDirectory.create(recursive: true);
+    }
 
     // Copiar o arquivo para o diretório interno
     final File savedFile = await originalFile.copy(newPath);
 
     // Agora você pode usar savedFile.path para exibir ou enviar o arquivo
-    print('Arquivo salvo no caminho: ${savedFile.path}');
+    _log.i('Arquivo salvo no caminho: ${savedFile.path}');
   }
 
 //download

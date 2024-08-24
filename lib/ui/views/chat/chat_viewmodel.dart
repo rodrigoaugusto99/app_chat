@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:stacked/stacked.dart';
+import 'package:path/path.dart' as path;
 
 class MessagesByDay {
   final String day;
@@ -171,15 +172,33 @@ Que ja foi usado com sucesso la no */
 
       MessagesByDay? todayMessages;
 
-      if (messagesGroupedByDays!.isEmpty) {
+      // if (messagesGroupedByDays!.isEmpty) {
+      //   todayMessages = MessagesByDay(
+      //     day: nowFormatted,
+      //     messages: [],
+      //   );
+      //   messagesGroupedByDays!.add(todayMessages);
+      // }
+
+      // todayMessages =
+      //     messagesGroupedByDays!.firstWhere((msg) => msg.day == nowFormatted);
+
+      // Verifique se já existe um grupo de mensagens para o dia atual
+      bool dayExists =
+          messagesGroupedByDays!.any((msg) => msg.day == nowFormatted);
+
+      if (!dayExists) {
+        // Se não existir, crie um novo grupo para o dia atual
         todayMessages = MessagesByDay(
           day: nowFormatted,
           messages: [],
         );
         messagesGroupedByDays!.add(todayMessages);
+      } else {
+        // Se existir, obtenha o grupo de mensagens para o dia atual
+        todayMessages =
+            messagesGroupedByDays!.firstWhere((msg) => msg.day == nowFormatted);
       }
-      todayMessages =
-          messagesGroupedByDays!.firstWhere((msg) => msg.day == nowFormatted);
       messages!.add(newMessage);
 
       todayMessages.messages.add(newMessage);
@@ -335,15 +354,30 @@ Que ja foi usado com sucesso la no */
   Future<void> sendImageOrVideo() async {
     //pick image or video
     final xFile = await pickMedia();
-
+    if (xFile == null) return;
     // Identificar se é uma imagem ou um vídeo
-    String mimeType = xFile!.mimeType!;
+    //String mimeType = xFile!.mimeType!;
+    String? type;
+    String fileExtension = path.extension(xFile.path).toLowerCase();
+
+    if (['.jpg', '.jpeg', '.png', '.gif'].contains(fileExtension)) {
+      // É uma imagem
+      _log.i('O arquivo é uma imagem');
+      type = 'image';
+    } else if (['.mp4', '.avi', '.mov', '.mkv'].contains(fileExtension)) {
+      // É um vídeo
+      _log.i('O arquivo é um vídeo');
+      type = 'video';
+    } else {
+      // Tipo desconhecido
+      _log.i('Tipo de arquivo desconhecido');
+      return;
+    }
 
     File mediaFile = File(xFile.path);
 
     //copy file to path_provider
-
-    if (mimeType.startsWith('video/')) {
+    if (type == 'video') {
       // É um vídeo
       //?upload storage
 
@@ -352,12 +386,13 @@ Que ja foi usado com sucesso la no */
       String? messageId = await sendMessage(videoUrl: url);
       if (messageId == null) return;
       //?upload local storage
-      _localStorageService.saveMyMediaWithPathProvider(
+      await _localStorageService.saveMyMediaWithPathProvider(
+        isVideo: true,
         chatId: chat.id,
         file: mediaFile,
         messageId: messageId,
       );
-    } else if (mimeType.startsWith('image/')) {
+    } else if (type == 'image') {
       // É uma imagem
       //?upload storage
       String url = await StorageUtils.uploadImageFile(mediaFile);
@@ -365,7 +400,8 @@ Que ja foi usado com sucesso la no */
       String? messageId = await sendMessage(imageUrl: url);
       if (messageId == null) return;
       //?upload local storage
-      _localStorageService.saveMyMediaWithPathProvider(
+      await _localStorageService.saveMyMediaWithPathProvider(
+        isImage: true,
         chatId: chat.id,
         file: mediaFile,
         messageId: messageId,

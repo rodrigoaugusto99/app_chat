@@ -187,6 +187,16 @@ class ChatView extends StackedView<ChatViewModel> {
                       ),
                     ),
                     decContainer(
+                        onTap: viewModel.sendImageOrVideo,
+                        radius: 30,
+                        height: 60,
+                        width: 60,
+                        color: Colors.orange,
+                        child: const Icon(
+                          Icons.photo,
+                          color: Colors.blueAccent,
+                        )),
+                    decContainer(
                       radius: 30,
                       height: 60,
                       width: 60,
