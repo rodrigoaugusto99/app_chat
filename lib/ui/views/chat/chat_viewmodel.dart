@@ -149,7 +149,13 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
        */
       if (newMessage.audioUrl != '') {
         downloadAudio(newMessage);
-      } else if (newMessage.imageUrl != '') {
+      } else if (newMessage.imageUrl != '' &&
+          newMessage.senderId != myUser!.id) {
+        //todo: aqui acho melhor dps ao inves de fzr download so se for do outro,
+        //todo: mas sim fazer download sempre que nao tiver um arquivo com esse message.id.
+
+        //se for imagem e nao for uma mensagem minha, entao quer dizer que preciso baixar
+        //com http e dps baixar localmente
         downloadImage(newMessage);
       }
 
@@ -335,7 +341,6 @@ Que ja foi usado com sucesso la no */
 
     File mediaFile = File(xFile.path);
 
-//todo: need to uuid messageId param.
     //copy file to path_provider
 
     if (mimeType.startsWith('video/')) {
@@ -354,10 +359,17 @@ Que ja foi usado com sucesso la no */
       );
     } else if (mimeType.startsWith('image/')) {
       // É uma imagem
-      //upload storage
+      //?upload storage
       String url = await StorageUtils.uploadImageFile(mediaFile);
       //send url message
-      sendMessage(imageUrl: url);
+      String? messageId = await sendMessage(imageUrl: url);
+      if (messageId == null) return;
+      //?upload local storage
+      _localStorageService.saveMyMediaWithPathProvider(
+        chatId: chat.id,
+        file: mediaFile,
+        messageId: messageId,
+      );
     } else {
       _log.e('Nao eh video nem imagem');
       //thorw exception escolha video ou uma imagem

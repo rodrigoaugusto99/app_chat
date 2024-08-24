@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/models/message_model.dart';
 import 'package:app_chat/services/audio_service.dart';
@@ -36,7 +35,33 @@ class _ChatBubbleState extends State<ChatBubble> {
   @override
   void initState() {
     super.initState();
+    if (widget.message.audioUrl != '') {
+      initAudio();
+    } else if (widget.message.imageUrl != '') {
+      initImage();
+    }
+  }
 
+  String? imagePath;
+
+  Future<void> initImage() async {
+    imagePath = await locator<LocalStorageService>().getFilePath(
+      chatId: widget.chatId,
+      messageId: widget.message.id!,
+    );
+    setState(() {});
+    //todo: se for null, eu poderia ja ter baixado la no chatviewmodel ne
+
+//     if (imagePath == null) {
+// //se nao tem o arquivo, mostrar pela internet mesmo
+//       imageFile = Image.network(imageUrl);
+//     } else {
+//       //se pegou o arquivo, mostre
+//       imageFile = File(imagePath);
+//     }
+  }
+
+  void initAudio() {
     if (mounted) {
       audioPlayer.onPlayerStateChanged.listen((state) {
         setState(() {
@@ -68,11 +93,19 @@ class _ChatBubbleState extends State<ChatBubble> {
   //todo: utisl
 
   Future<void> playAudio() async {
-    final audioPath = await locator<LocalStorageService>().getAudioPath(
+    final audioPath = await locator<LocalStorageService>().getFilePath(
       chatId: widget.chatId,
       messageId: widget.message.id!,
     );
     await locator<AudioService>().playAudio(audioPath!);
+  }
+
+  Future<String?> getImagePath() async {
+    final imagePath = await locator<LocalStorageService>().getFilePath(
+      chatId: widget.chatId,
+      messageId: widget.message.id!,
+    );
+    return imagePath;
   }
 
   @override
@@ -189,6 +222,36 @@ class _ChatBubbleState extends State<ChatBubble> {
       );
     }
 
+    // Widget myImage() {
+    //   //todo: exibir a imagem de acordo com as suas proprias dimensoes
+    //   return decContainer(
+    //     width: screenWidth(context) / 2,
+    //     color: Colors.blue,
+    //     child: ClipRRect(
+    //       borderRadius: BorderRadius.circular(8.0),
+    //       child: widget.message.isDownloading
+    //           ? decContainer(
+    //               //todo: FutureBuilder.
+    //               color: Colors.grey,
+    //               child: const CircularProgressIndicator(),
+    //             )
+    //           : imagePath != null
+    //               ? Image.file(
+    //                   File(imagePath!),
+    //                   fit: BoxFit.cover,
+    //                   // width: 150,
+    //                   // height: 150,
+    //                 )
+    //               : Image.network(
+    //                   widget.message.imageUrl!,
+    //                   fit: BoxFit.cover,
+    //                   // width: 150,
+    //                   // height: 150,
+    //                 ),
+    //     ),
+    //   );
+    // }
+
     Widget myImage() {
       //todo: exibir a imagem de acordo com as suas proprias dimensoes
       return decContainer(
@@ -198,14 +261,23 @@ class _ChatBubbleState extends State<ChatBubble> {
           borderRadius: BorderRadius.circular(8.0),
           child: widget.message.isDownloading
               ? decContainer(
+                  //todo: FutureBuilder.
                   color: Colors.grey,
                   child: const CircularProgressIndicator(),
                 )
-              : Image.file(
-                  File(widget.message.imageUrl!),
-                  fit: BoxFit.cover,
-                  // width: 150,
-                  // height: 150,
+              : FutureBuilder<String?>(
+                  future: getImagePath(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    } else if (snapshot.hasError || !snapshot.hasData) {
+                      // Fallback para Image.network se o arquivo local não for encontrado ou houve erro
+                      return Image.network(widget.message.imageUrl!);
+                    } else {
+                      // Exibe a imagem localmente
+                      return Image.file(File(snapshot.data!));
+                    }
+                  },
                 ),
         ),
       );

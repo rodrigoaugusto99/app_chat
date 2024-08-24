@@ -31,7 +31,7 @@ class StorageUtils {
       String fileName = "${DateTime.now().millisecondsSinceEpoch}.aac";
 
       // Pasta onde o arquivo será armazenado (por exemplo, 'audios/')
-      Reference ref = FirebaseStorage.instance.ref().child('audios/$fileName');
+      Reference ref = FirebaseStorage.instance.ref().child('images/$fileName');
 
       // Upload do arquivo
       UploadTask uploadTask = ref.putFile(file);
@@ -42,7 +42,7 @@ class StorageUtils {
       return downloadUrl;
     } catch (e) {
       //_log.e('Erro ao fazer upload do áudio: $e');
-      throw Exception('Erro ao fazer upload do áudio: $e');
+      throw Exception('Erro ao fazer upload da imagem: $e');
     }
   }
 

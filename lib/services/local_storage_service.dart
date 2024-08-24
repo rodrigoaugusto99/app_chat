@@ -66,7 +66,7 @@ class LocalStorageService {
     return true;
   }
 
-  Future<String?> getAudioPath({
+  Future<String?> getFilePath({
     required String chatId,
     required String messageId,
   }) async {
@@ -104,8 +104,8 @@ class LocalStorageService {
 //download
   Future<String?> downloadImage({
     required String chatId,
-    required String imageUrl,
     required String messageId,
+    required String imageUrl,
   }) async {
     // Obtém o diretório local para armazenar o arquivo
     try {
