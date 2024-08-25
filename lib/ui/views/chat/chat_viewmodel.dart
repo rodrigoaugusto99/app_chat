@@ -119,6 +119,7 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 
     //audios que serao checados se ja foram baixados.
     List<MessageModel> audiosToCheck = [];
+    List<MessageModel> imagesToCheck = [];
 
 //iterar por cada msg e inserir UserModel correspondente
     for (var message in messages!) {
@@ -126,6 +127,9 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
         //! para teste
         // message.isDownloading = true;
         audiosToCheck.add(message);
+      }
+      if (message.imageUrl != '') {
+        imagesToCheck.add(message);
       }
 
       if (message.senderId == myUser!.id) {
@@ -151,22 +155,10 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
        */
       if (newMessage.audioUrl != '') {
         downloadAudio(newMessage);
-      } else if (newMessage.imageUrl != '' &&
-          newMessage.senderId != myUser!.id) {
-        //todo: aqui acho melhor dps ao inves de fzr download so se for do outro,
-        //todo: mas sim fazer download sempre que nao tiver um arquivo com esse message.id.
-
-        //se for imagem e nao for uma mensagem minha, entao quer dizer que preciso baixar
-        //com http e dps baixar localmente
-        downloadImage(newMessage);
       }
-
-/*todo: se for um video ou imagem que EU mandei, entao usar o: 
-(usa metodo copy pois tenho o arquivo no meu celular).
-Que ja foi usado com sucesso la no */
-
-//todo: se o senderId nao for o meu, entao baixar (baixar com httpo arquivo la da url do firestore que eh do storage)
-
+      if (newMessage.imageUrl != '') {
+        checkAndDownload(newMessage);
+      }
       //adicionando a nova mensagem na lista de mensagens do MessagesByModel de HOJE.
       DateTime now = DateTime.now();
       String nowFormatted = formatDate(now);
@@ -224,12 +216,36 @@ Que ja foi usado com sucesso la no */
         downloadAudio(audio);
       }
     }
+    for (var image in imagesToCheck) {
+      bool isDowloaded = await _localStorageService.checkIfImageIsDownloaded(
+        message: image,
+        chatId: chat.id,
+      );
+      if (!isDowloaded) {
+        downloadImage(image);
+      }
+    }
   }
 
+//fiz essa funcao separada nao precisar usar o await la quando fazer a logica dentro do listener
+  Future<void> checkAndDownload(MessageModel image) async {
+    bool isDowloaded = await _localStorageService.checkIfAudioIsDownloaded(
+      message: image,
+      chatId: chat.id,
+    );
+    if (!isDowloaded) {
+      downloadImage(image);
+    }
+  }
+
+//todo: isso deve ser downloadFile, com parametro booleano para isImage,audio ou video
+//todo: ai la no downloadFile dentro de _localStorageService, tbm tera esse parametro
+//todo:boleando para decidir se vai baixar com extensao de audio, imagem ou video.
   Future<void> downloadAudio(MessageModel message) async {
     message.isDownloading = true;
     _log.f('isDownloading = true');
     notifyListeners();
+    //todo: fazer a logica do http aqui fora.
     final fileDownloaded = await _localStorageService.downloadAudio(
       audioUrl: message.audioUrl!,
       chatId: chat.id,
@@ -254,6 +270,7 @@ Que ja foi usado com sucesso la no */
     message.isDownloading = true;
     _log.f('isDownloading = true');
     notifyListeners();
+    //nessa funcao, estou baixando remotamente e localmente.
     final fileDownloaded = await _localStorageService.downloadImage(
       chatId: chat.id,
       imageUrl: message.imageUrl!,
@@ -350,6 +367,7 @@ Que ja foi usado com sucesso la no */
     File? file = await _recorderService.recordVoice();
     if (file == null) return;
     final audioUrl = await StorageUtils.uploadAudioFile(file);
+    //gerar o id da mensagem pra tambem nao depender do firestore p baixar a imagem
     sendMessage(audioUrl: audioUrl);
     //notifyListeners();
   }

@@ -142,3 +142,25 @@ primeiro ou ao mesmo tempo em que faz o upload. Dessa forma, nao preciso mandar 
 consigo apenas mandar depois de ja ter feito o download local, diminuindo as chances de demorar mto pra fazer
 o downlaod local e fazer com que o bubble escolha exibir a mensagem com image.network ao inves do image.file, que
 eh mais "rapido".
+
+todo: videos
+
+o ato de pegar a mensagem no listener e verificar se ela ja foi baixada, ja engloba o ato de baixar pra o usuario recebedor
+e baixar caso eu entrei no chat e aquele arquivo ja foi mandnasdo pelo outro usuario enquanto eu estava off
+
+atualmente estou baixando tudo que o usuario manda antes mesmo de ele enviar a mensagem.
+a mensagem do usuario so aparece pra ele mesmo quando a msg chega pelo listener.
+no caso dos audios, o usuario que mandou ee o que recebeu estao baixando o audio 
+logo apos a msg ser recebida pelo listener. 
+No caso de imagem, o usuario que mandou a imagem, primeiro faz o upload, dps
+faz o download localmente no path_provider, e dps manda.Ou seja, quando a imagem
+chega no listener, eu verifico se a imagem ja foi baixada para ai sim comecar o download 
+dela. ou seja, so cai nessa condicao quando o usuario for o recebedor da mensagem, pois o 
+mandador ja baixou localmente. Isso ao msm tempo ja soluciona o ato de verificacao de mensagem
+ja baixada ou nao em ambos os usuarios. 
+Estou baixando o arquivo imediatamente qnd vejo que nao foi baixado pelo usuario. 
+Acho que isso nao eh uma boa ideia, pois vms supor que eu deletei as imagens do cache justamente pra abrir mais
+espaco no meu dispositivo. Entao eu nao o usuario precisa escolher se quer baixar ou nao aquela mensagem
+que nao esta baixada. 
+Se o usuario deletou as msgs, entao fodase, nao vms nem receber aquela msg entao nao precisamos nos preocupar em baixar ou
+naop aquela mensage,

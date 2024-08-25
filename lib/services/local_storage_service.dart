@@ -69,6 +69,24 @@ class LocalStorageService {
     return true;
   }
 
+  Future<bool> checkIfImageIsDownloaded({
+    required MessageModel message,
+    required String chatId,
+  }) async {
+    final directoryPath = '${directory!.path}/$chatId';
+    final filePath = '$directoryPath/${message.id}.jpg';
+
+    // Cria a subpasta, se ela não existir
+    final file = File(filePath);
+
+    // Verifica se o arquivo já foi baixado
+    final alreadyExist = file.existsSync();
+    if (!alreadyExist) {
+      return false;
+    }
+    return true;
+  }
+
   Future<String?> getAudioPath({
     required String chatId,
     required String messageId,
