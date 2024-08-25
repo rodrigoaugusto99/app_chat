@@ -45,9 +45,15 @@ class _ChatBubbleState extends State<ChatBubble> {
     }
   }
 
-  String? imagePath = '';
+  String getPossiblePath() {
+    return '${locator<LocalStorageService>().directory!.path}/${widget.chatId}/${widget.message.id}.jpg';
+  }
+
+  String? imagePath;
 
   Future<void> initImage() async {
+    imagePath = getPossiblePath();
+    setState(() {});
     //se eu colocar esse delay, da tempo de esperar o downlaod local antes de pegar o arquivo.
     //se la retornou null, entao eu aqui na view la no build eu chamo o image.network
     //todo: e se eu fizer um singleton com os downloads? ai eu teria acesso aqui tbm no loading p baixar local
@@ -56,9 +62,13 @@ class _ChatBubbleState extends State<ChatBubble> {
       chatId: widget.chatId,
       messageId: widget.message.id!,
     );
-    _log.v('image path from getImagePath(): $newImagePath');
-    imagePath = newImagePath;
-    if (imagePath == null) {
+    // _log.v('image path from getImagePath(): $newImagePath');
+    // imagePath = newImagePath;
+    if (newImagePath == null) {
+//!se for null, quer dizer que nao tenho essa img no meu dispositivo, entao vai dar erro
+//ao exibir aqui. Entao, vou colocar uma flag nela p dizer que nao ta baixada.*/
+      widget.message.needToDownload = true;
+
       /*isso acontece na primeira vez, que entra no listener essa mensagem.
       pois a mensagem ja foi enviada para o firestore e pegamos o snapshot com
       o listener antes mesmo de salvarmos essa foto localmente. 
@@ -112,6 +122,24 @@ class _ChatBubbleState extends State<ChatBubble> {
         });
       });
     }
+  }
+
+  Future<void> downloadIt() async {
+    widget.message.isDownloading = true;
+    setState(() {});
+    try {
+      final fileDownloaded = await locator<LocalStorageService>().downloadImage(
+        chatId: widget.chatId,
+        imageUrl: widget.message.imageUrl!,
+        messageId: widget.message.id!,
+      );
+      imagePath = fileDownloaded;
+      widget.message.isDownloading = false;
+    } on Exception catch (e) {
+      _log.e(e);
+      widget.message.hasError = true;
+    }
+    setState(() {});
   }
 
   @override
@@ -255,31 +283,46 @@ class _ChatBubbleState extends State<ChatBubble> {
 
     Widget myImage() {
       //todo: exibir a imagem de acordo com as suas proprias dimensoes
-      return decContainer(
-        width: screenWidth(context) / 2,
-        color: Colors.blue,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8.0),
-          child: widget.message.isDownloading || imagePath == ''
-              ? decContainer(
-                  color: Colors.grey,
-                  child: const CircularProgressIndicator(),
-                )
-              : imagePath != null
-                  ? Image.file(
-                      File(imagePath!),
-                      fit: BoxFit.cover,
-                      // width: 150,
-                      // height: 150,
-                    )
-                  : Image.network(
-                      widget.message.imageUrl!,
-                      fit: BoxFit.cover,
-                      // width: 150,
-                      // height: 150,
-                    ),
-        ),
-      );
+      return widget.message.needToDownload
+          ? decContainer(
+              alignment: Alignment.center,
+              width: screenWidth(context) / 2,
+              height: screenWidth(context) / 2,
+              color: Colors.blue,
+              child: GestureDetector(
+                onTap: () => downloadIt(),
+                child: const Icon(
+                  Icons.download,
+                  color: Colors.white,
+                ),
+              ),
+            )
+          : decContainer(
+              width: screenWidth(context) / 2,
+              // height: screenWidth(context) / 2,
+              color: Colors.blue,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child: widget.message.isDownloading
+                    ? decContainer(
+                        color: Colors.grey,
+                        child: const CircularProgressIndicator(),
+                      )
+                    : imagePath != null
+                        ? Image.file(
+                            File(imagePath!),
+                            fit: BoxFit.cover,
+                            // width: 150,
+                            // height: 150,
+                          )
+                        : Image.network(
+                            widget.message.imageUrl!,
+                            fit: BoxFit.cover,
+                            // width: 150,
+                            // height: 150,
+                          ),
+              ),
+            );
     }
 
     // Widget myImage() {

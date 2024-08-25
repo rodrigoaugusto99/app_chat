@@ -14,6 +14,8 @@ class MessageModel {
   Timestamp createdAt;
   bool isDownloading;
   bool hasError;
+  String? path;
+  bool needToDownload;
   MessageModel({
     this.id,
     this.user,
@@ -22,8 +24,10 @@ class MessageModel {
     this.audioUrl,
     this.videoUrl,
     this.imageUrl,
+    this.path,
     this.isDownloading = false,
     this.hasError = false,
+    this.needToDownload = false,
     required this.createdAt,
   });
 

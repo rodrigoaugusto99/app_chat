@@ -164,3 +164,12 @@ espaco no meu dispositivo. Entao eu nao o usuario precisa escolher se quer baixa
 que nao esta baixada. 
 Se o usuario deletou as msgs, entao fodase, nao vms nem receber aquela msg entao nao precisamos nos preocupar em baixar ou
 naop aquela mensage,
+
+sera q o wpp armazena todas as mensagwens de audio ou imagens realmente? sera q eles deletam do banco quando o 
+ambos os usuarios baixam localmente?
+
+to achando que eh melhor fazer mais operacoes la no servid anes de enviar as msgs pro viewmOdel.
+mas isso pode fzr demorar bastante ate p aparecer as mensagens. que tal fazer assim:
+Carregar as 15 primeiras mensgens, e JA mandar pra viewModel. Depois, carregar o mais algumas e mandar pra viewModel
+de novo. Ou seja, mandar logo as primeiras pra ja ir aparecendo o chat la pro usuario, inves de carregar uma leva
+grande de msgs logo de cara. Como faria isso?

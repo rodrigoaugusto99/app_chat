@@ -104,6 +104,10 @@ class LocalStorageService {
     return filePath;
   }
 
+  String getPossiblePath(String chatId, String messageId) {
+    return '${directory!.path}/$chatId/$messageId.jpg';
+  }
+
   Future<String?> getImagePath({
     required String chatId,
     required String messageId,

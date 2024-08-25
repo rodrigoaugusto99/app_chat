@@ -4,6 +4,7 @@ import 'package:app_chat/app/app.logger.dart';
 import 'package:app_chat/exceptions/app_error.dart';
 import 'package:app_chat/models/chat_model.dart';
 import 'package:app_chat/models/message_model.dart';
+import 'package:app_chat/services/local_storage_service.dart';
 import 'package:app_chat/services/user_service.dart';
 import 'package:app_chat/ui/utils/firestore_utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -95,6 +96,11 @@ class ChatService {
       for (var message in messagesSnapshot.docs) {
         //todo: if message does not existe, send some default error message to show on the place of old lost message.
         final messageModel = MessageModel.fromDocument(message);
+        final possiblePath = locator<LocalStorageService>().getPossiblePath(
+          chatId,
+          messageModel.id!,
+        );
+        messageModel.path = possiblePath;
         messages.add(messageModel);
       }
 
