@@ -17,15 +17,65 @@ class LocalStorageService {
     directory = await getApplicationDocumentsDirectory();
   }
 
-  Future<String?> downloadAudio({
+  // Future<String?> downloadAudio({
+  //   required String chatId,
+  //   required String audioUrl,
+  //   required String messageId,
+  // }) async {
+  //   // Obtém o diretório local para armazenar o arquivo
+  //   try {
+  //     final directoryPath = '${directory!.path}/$chatId';
+  //     final filePath = '$directoryPath/$messageId.aac';
+
+  //     // Cria a subpasta, se ela não existir
+  //     final dir = Directory(directoryPath);
+  //     if (!await dir.exists()) {
+  //       await dir.create(recursive: true);
+  //     }
+
+  //     // Faz o download do arquivo de áudio
+  //     final response = await _htppService.get(audioUrl);
+  //     final file = File(filePath);
+
+  //     // Salva o arquivo localmente
+  //     await file.writeAsBytes(response.bodyBytes);
+  //     // _log.i('path dod audio baixado!!!!!');
+  //     // _log.i(filePath);
+  //     return filePath;
+  //   } on Exception catch (e) {
+  //     // _log.e(e);
+  //     // return null;
+  //     throw Exception(e);
+  //   }
+  // }
+
+  Future<String?> downloadFile({
     required String chatId,
-    required String audioUrl,
-    required String messageId,
+    required MessageModel message,
+    bool isAudio = false,
+    bool isVideo = false,
+    bool isImage = false,
   }) async {
     // Obtém o diretório local para armazenar o arquivo
+
+    String ext = '';
+    String url = '';
+    if (isAudio) {
+      ext = 'aac';
+      url = message.audioUrl!;
+    }
+    if (isVideo) {
+      ext = 'mp4';
+      url = message.videoUrl!;
+    }
+    if (isImage) {
+      ext = 'jpg';
+      url = message.imageUrl!;
+    }
+
     try {
       final directoryPath = '${directory!.path}/$chatId';
-      final filePath = '$directoryPath/$messageId.aac';
+      final filePath = '$directoryPath/${message.id}.$ext';
 
       // Cria a subpasta, se ela não existir
       final dir = Directory(directoryPath);
@@ -34,7 +84,7 @@ class LocalStorageService {
       }
 
       // Faz o download do arquivo de áudio
-      final response = await _htppService.get(audioUrl);
+      final response = await _htppService.get(url);
       final file = File(filePath);
 
       // Salva o arquivo localmente
@@ -49,12 +99,21 @@ class LocalStorageService {
     }
   }
 
-  Future<bool> checkIfAudioIsDownloaded({
+  String? checkIfFileIsDownloaded({
     required MessageModel message,
     required String chatId,
-  }) async {
+    bool isAudio = false,
+    bool isVideo = false,
+    bool isImage = false,
+  }) {
+    String ext = '';
+
+    if (isAudio) ext = 'aac';
+    if (isVideo) ext = 'mp4';
+    if (isImage) ext = 'jpg';
+
     final directoryPath = '${directory!.path}/$chatId';
-    final filePath = '$directoryPath/${message.id}.aac';
+    final filePath = '$directoryPath/${message.id}.$ext';
 
     // Cria a subpasta, se ela não existir
     final file = File(filePath); // Corrigido para usar File em vez de Directory
@@ -64,28 +123,28 @@ class LocalStorageService {
     if (!alreadyExist) {
       //_log.i('audio ainda nao baixado: $filePath');
       //download(message);
-      return false;
+      return null;
     }
-    return true;
+    return filePath;
   }
 
-  Future<bool> checkIfImageIsDownloaded({
-    required MessageModel message,
-    required String chatId,
-  }) async {
-    final directoryPath = '${directory!.path}/$chatId';
-    final filePath = '$directoryPath/${message.id}.jpg';
+  // bool checkIfImageIsDownloaded({
+  //   required MessageModel message,
+  //   required String chatId,
+  // }) {
+  //   final directoryPath = '${directory!.path}/$chatId';
+  //   final filePath = '$directoryPath/${message.id}.jpg';
 
-    // Cria a subpasta, se ela não existir
-    final file = File(filePath);
+  //   // Cria a subpasta, se ela não existir
+  //   final file = File(filePath);
 
-    // Verifica se o arquivo já foi baixado
-    final alreadyExist = file.existsSync();
-    if (!alreadyExist) {
-      return false;
-    }
-    return true;
-  }
+  //   // Verifica se o arquivo já foi baixado
+  //   final alreadyExist = file.existsSync();
+  //   if (!alreadyExist) {
+  //     return false;
+  //   }
+  //   return true;
+  // }
 
   Future<String?> getAudioPath({
     required String chatId,
@@ -167,33 +226,33 @@ class LocalStorageService {
   }
 
 //download
-  Future<String?> downloadImage({
-    required String chatId,
-    required String messageId,
-    required String imageUrl,
-  }) async {
-    // Obtém o diretório local para armazenar o arquivo
-    try {
-      final directoryPath = '${directory!.path}/$chatId';
-      final filePath = '$directoryPath/$messageId.jpg';
+  // Future<String?> downloadImage({
+  //   required String chatId,
+  //   required String messageId,
+  //   required String imageUrl,
+  // }) async {
+  //   // Obtém o diretório local para armazenar o arquivo
+  //   try {
+  //     final directoryPath = '${directory!.path}/$chatId';
+  //     final filePath = '$directoryPath/$messageId.jpg';
 
-      // Cria a subpasta, se ela não existir
-      final dir = Directory(directoryPath);
-      if (!await dir.exists()) {
-        await dir.create(recursive: true);
-      }
+  //     // Cria a subpasta, se ela não existir
+  //     final dir = Directory(directoryPath);
+  //     if (!await dir.exists()) {
+  //       await dir.create(recursive: true);
+  //     }
 
-      // Faz o download do arquivo
-      final response = await _htppService.get(imageUrl);
-      final file = File(filePath);
+  //     // Faz o download do arquivo
+  //     final response = await _htppService.get(imageUrl);
+  //     final file = File(filePath);
 
-      // Salva o arquivo localmente
-      await file.writeAsBytes(response.bodyBytes);
-      return filePath;
-    } on Exception catch (e) {
-      // _log.e(e);
-      // return null;
-      throw Exception(e);
-    }
-  }
+  //     // Salva o arquivo localmente
+  //     await file.writeAsBytes(response.bodyBytes);
+  //     return filePath;
+  //   } on Exception catch (e) {
+  //     // _log.e(e);
+  //     // return null;
+  //     throw Exception(e);
+  //   }
+  // }
 }

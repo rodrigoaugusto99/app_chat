@@ -118,18 +118,34 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     if (messages == null) return; //todo: grab error
 
     //audios que serao checados se ja foram baixados.
-    List<MessageModel> audiosToCheck = [];
-    List<MessageModel> imagesToCheck = [];
+    //List<MessageModel> audiosToCheck = [];
 
 //iterar por cada msg e inserir UserModel correspondente
     for (var message in messages!) {
       if (message.audioUrl != '') {
-        //! para teste
-        // message.isDownloading = true;
-        audiosToCheck.add(message);
+        //audiosToCheck.add(message);
+        String? filePath = _localStorageService.checkIfFileIsDownloaded(
+          message: message,
+          chatId: chat.id,
+          isAudio: true,
+        );
+        if (filePath == null) {
+          message.needToDownload = true;
+        } else {
+          message.path = filePath;
+        }
       }
       if (message.imageUrl != '') {
-        imagesToCheck.add(message);
+        String? filePath = _localStorageService.checkIfFileIsDownloaded(
+          message: message,
+          chatId: chat.id,
+          isImage: true,
+        );
+        if (filePath == null) {
+          message.needToDownload = true;
+        } else {
+          message.path = filePath;
+        }
       }
 
       if (message.senderId == myUser!.id) {
@@ -154,27 +170,22 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
       refletir na view.
        */
       if (newMessage.audioUrl != '') {
-        downloadAudio(newMessage);
+        checkAndDownload(
+          message: newMessage,
+          isAudio: true,
+        );
       }
       if (newMessage.imageUrl != '') {
-        checkAndDownload(newMessage);
+        checkAndDownload(
+          message: newMessage,
+          isImage: true,
+        );
       }
       //adicionando a nova mensagem na lista de mensagens do MessagesByModel de HOJE.
       DateTime now = DateTime.now();
       String nowFormatted = formatDate(now);
 
       MessagesByDay? todayMessages;
-
-      // if (messagesGroupedByDays!.isEmpty) {
-      //   todayMessages = MessagesByDay(
-      //     day: nowFormatted,
-      //     messages: [],
-      //   );
-      //   messagesGroupedByDays!.add(todayMessages);
-      // }
-
-      // todayMessages =
-      //     messagesGroupedByDays!.firstWhere((msg) => msg.day == nowFormatted);
 
       // Verifique se já existe um grupo de mensagens para o dia atual
       bool dayExists =
@@ -202,90 +213,74 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 
       notifyListeners();
     });
-
+    await Future.delayed(const Duration(seconds: 2));
     setBusy(false);
 
     //to checando em outro loop pra nao atrapalhar ou enlerdar o loop de todas as mensagens.
     //checando as mensagens de audio
-    for (var audio in audiosToCheck) {
-      bool isDowloaded = await _localStorageService.checkIfAudioIsDownloaded(
-        message: audio,
-        chatId: chat.id,
-      );
-      if (!isDowloaded) {
-        downloadAudio(audio);
-      }
-    }
-    for (var image in imagesToCheck) {
-      bool isDowloaded = await _localStorageService.checkIfImageIsDownloaded(
-        message: image,
-        chatId: chat.id,
-      );
-      if (!isDowloaded) {
-        downloadImage(image);
-      }
-    }
+    // for (var audio in audiosToCheck) {
+    //   String? filePath = _localStorageService.checkIfFileIsDownloaded(
+    //     message: audio,
+    //     chatId: chat.id,
+    //   );
+    //   if (filePath == null) {
+    //     downloadFile(message: audio, isAudio: true);
+    //   } else {
+    //     audio.path = filePath;
+    //   }
+    // }
   }
 
 //fiz essa funcao separada nao precisar usar o await la quando fazer a logica dentro do listener
-  Future<void> checkAndDownload(MessageModel image) async {
-    bool isDowloaded = await _localStorageService.checkIfAudioIsDownloaded(
-      message: image,
+  void checkAndDownload({
+    required MessageModel message,
+    bool isAudio = false,
+    bool isVideo = false,
+    bool isImage = false,
+  }) {
+    String? filePath = _localStorageService.checkIfFileIsDownloaded(
+      message: message,
       chatId: chat.id,
+      isImage: true,
     );
-    if (!isDowloaded) {
-      downloadImage(image);
+    if (filePath == null) {
+      downloadFile(
+        message: message,
+        isAudio: isAudio,
+        isVideo: isVideo,
+        isImage: isImage,
+      );
     }
   }
 
 //todo: isso deve ser downloadFile, com parametro booleano para isImage,audio ou video
 //todo: ai la no downloadFile dentro de _localStorageService, tbm tera esse parametro
 //todo:boleando para decidir se vai baixar com extensao de audio, imagem ou video.
-  Future<void> downloadAudio(MessageModel message) async {
-    message.isDownloading = true;
-    _log.f('isDownloading = true');
-    notifyListeners();
-    //todo: fazer a logica do http aqui fora.
-    final fileDownloaded = await _localStorageService.downloadAudio(
-      audioUrl: message.audioUrl!,
-      chatId: chat.id,
-      messageId: message.id!,
-    );
-    if (fileDownloaded == null) {
-      _log.e('falha ao baixar mensagem ${message.id}');
-      message.isDownloading = false;
-      _log.f('isDownloading = false');
-      //se der erro, setar esse bool de erro pra mostrar um simbolo de erro nessa mensagem.
-      message.hasError = true;
-      return;
-    }
-    //se nao deu erro, ou seja, nao retornou null naquele metodo, entao tirar esse bool true.
-    //ai la no bubble, mostraremos a setinha ao inves do simbolo de estar baixando.
-    message.isDownloading = false;
-    _log.f('isDownloading = false');
-    notifyListeners();
-  }
 
-  Future<void> downloadImage(MessageModel message) async {
+  Future<void> downloadFile({
+    required MessageModel message,
+    bool isAudio = false,
+    bool isVideo = false,
+    bool isImage = false,
+  }) async {
     message.isDownloading = true;
     _log.f('isDownloading = true');
     notifyListeners();
-    //nessa funcao, estou baixando remotamente e localmente.
-    final fileDownloaded = await _localStorageService.downloadImage(
+
+    final fileDownloaded = await _localStorageService.downloadFile(
+      isAudio: isAudio,
+      isVideo: isVideo,
+      isImage: isImage,
       chatId: chat.id,
-      imageUrl: message.imageUrl!,
-      messageId: message.id!,
+      message: message,
     );
     if (fileDownloaded == null) {
       _log.e('falha ao baixar mensagem ${message.id}');
       message.isDownloading = false;
       _log.f('isDownloading = false');
-      //se der erro, setar esse bool de erro pra mostrar um simbolo de erro nessa mensagem.
       message.hasError = true;
       return;
     }
-    //se nao deu erro, ou seja, nao retornou null naquele metodo, entao tirar esse bool true.
-    //ai la no bubble, mostraremos a setinha ao inves do simbolo de estar baixando.
     message.isDownloading = false;
     _log.f('isDownloading = false');
     notifyListeners();

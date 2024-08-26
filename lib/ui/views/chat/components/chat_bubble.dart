@@ -30,7 +30,7 @@ class ChatBubble extends StatefulWidget {
 
 class _ChatBubbleState extends State<ChatBubble> {
   //final _log = getLogger('MyChatBubble');
-  AudioPlayer audioPlayer = AudioPlayer();
+  AudioPlayer? audioPlayer;
   bool isPlaying = false;
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
@@ -41,51 +41,54 @@ class _ChatBubbleState extends State<ChatBubble> {
     if (widget.message.audioUrl != '') {
       initAudio();
     } else if (widget.message.imageUrl != '') {
-      initImage();
+      //initImage();
     }
   }
 
-  String getPossiblePath() {
-    return '${locator<LocalStorageService>().directory!.path}/${widget.chatId}/${widget.message.id}.jpg';
-  }
+  // String getPossiblePath() {
+  //   return '${locator<LocalStorageService>().directory!.path}/${widget.chatId}/${widget.message.id}.jpg';
+  // }
 
-  String? imagePath;
+  //String? imagePath;
 
   Future<void> initImage() async {
-    imagePath = getPossiblePath();
-    setState(() {});
+    // if (!widget.message.needToDownload) {
+    //   imagePath = getPossiblePath();
+    //   setState(() {});
+    // }
+
     //se eu colocar esse delay, da tempo de esperar o downlaod local antes de pegar o arquivo.
     //se la retornou null, entao eu aqui na view la no build eu chamo o image.network
     //todo: e se eu fizer um singleton com os downloads? ai eu teria acesso aqui tbm no loading p baixar local
     // await Future.delayed(const Duration(seconds: 2));
-    final newImagePath = await locator<LocalStorageService>().getImagePath(
-      chatId: widget.chatId,
-      messageId: widget.message.id!,
-    );
-    // _log.v('image path from getImagePath(): $newImagePath');
-    // imagePath = newImagePath;
-    if (newImagePath == null) {
-//!se for null, quer dizer que nao tenho essa img no meu dispositivo, entao vai dar erro
-//ao exibir aqui. Entao, vou colocar uma flag nela p dizer que nao ta baixada.*/
-      widget.message.needToDownload = true;
+//     final newImagePath = await locator<LocalStorageService>().getImagePath(
+//       chatId: widget.chatId,
+//       messageId: widget.message.id!,
+//     );
+//     // _log.v('image path from getImagePath(): $newImagePath');
+//     // imagePath = newImagePath;
+//     if (newImagePath == null) {
+// //!se for null, quer dizer que nao tenho essa img no meu dispositivo, entao vai dar erro
+// //ao exibir aqui. Entao, vou colocar uma flag nela p dizer que nao ta baixada.*/
+//       widget.message.needToDownload = true;
 
-      /*isso acontece na primeira vez, que entra no listener essa mensagem.
-      pois a mensagem ja foi enviada para o firestore e pegamos o snapshot com
-      o listener antes mesmo de salvarmos essa foto localmente. 
-      
-      //!e se eu colocasse delay de 500 milisegundos pra carregar a imagem? 
-      isso pode dar tempo, mas se for uma imagem mt grande, capaz de n ter problema tbm,
-      tipo ql o problema de ver imagem pela internet so naquele momento raro?
+//       /*isso acontece na primeira vez, que entra no listener essa mensagem.
+//       pois a mensagem ja foi enviada para o firestore e pegamos o snapshot com
+//       o listener antes mesmo de salvarmos essa foto localmente.
 
-      mas...se for video, demora mais para baixar, entao nao deve valer a pena colocar
-      esse delay. Que tal chamarmos o metodo de getVideoPath de tal segundo em tal segundo,
-      e vamos ficar ouvindo as respostas. enquanto continuar retornando null, estamos exibindo
-      o arquivo com network, mas no primeiro momento que retornar o caminho, entao podemos 
-      atribuir o videoPath e chamar o setState pra comecar a usar o arquivo local ao inves do remoto.
-      */
-      _log.f('usando image.network');
-    }
-    setState(() {});
+//       //!e se eu colocasse delay de 500 milisegundos pra carregar a imagem?
+//       isso pode dar tempo, mas se for uma imagem mt grande, capaz de n ter problema tbm,
+//       tipo ql o problema de ver imagem pela internet so naquele momento raro?
+
+//       mas...se for video, demora mais para baixar, entao nao deve valer a pena colocar
+//       esse delay. Que tal chamarmos o metodo de getVideoPath de tal segundo em tal segundo,
+//       e vamos ficar ouvindo as respostas. enquanto continuar retornando null, estamos exibindo
+//       o arquivo com network, mas no primeiro momento que retornar o caminho, entao podemos
+//       atribuir o videoPath e chamar o setState pra comecar a usar o arquivo local ao inves do remoto.
+//       */
+//       _log.f('usando image.network');
+//     }
+//     setState(() {});
     //todo: se for null, eu poderia ja ter baixado la no chatviewmodel ne ou service??!?!?! ui !
     //nem da, pq de qlqr forma temos que fazer o doc p pegar o id da mensagem pra poder ai sim
 //fazer o download com o arquivo com o nome correto, e nao tem await que faca o listener nao
@@ -103,20 +106,21 @@ class _ChatBubbleState extends State<ChatBubble> {
   }
 
   void initAudio() {
+    audioPlayer = AudioPlayer();
     if (mounted) {
-      audioPlayer.onPlayerStateChanged.listen((state) {
+      audioPlayer!.onPlayerStateChanged.listen((state) {
         setState(() {
           isPlaying = state == PlayerState.playing;
         });
       });
 
-      audioPlayer.onDurationChanged.listen((newDuration) {
+      audioPlayer!.onDurationChanged.listen((newDuration) {
         setState(() {
           duration = newDuration;
         });
       });
 
-      audioPlayer.onPositionChanged.listen((newPosition) {
+      audioPlayer!.onPositionChanged.listen((newPosition) {
         setState(() {
           position = newPosition;
         });
@@ -128,12 +132,13 @@ class _ChatBubbleState extends State<ChatBubble> {
     widget.message.isDownloading = true;
     setState(() {});
     try {
-      final fileDownloaded = await locator<LocalStorageService>().downloadImage(
+      final filePathDownloaded =
+          await locator<LocalStorageService>().downloadFile(
         chatId: widget.chatId,
-        imageUrl: widget.message.imageUrl!,
-        messageId: widget.message.id!,
+        isImage: true,
+        message: widget.message,
       );
-      imagePath = fileDownloaded;
+      widget.message.path = filePathDownloaded;
       widget.message.isDownloading = false;
     } on Exception catch (e) {
       _log.e(e);
@@ -144,7 +149,10 @@ class _ChatBubbleState extends State<ChatBubble> {
 
   @override
   void dispose() {
-    audioPlayer.dispose();
+    if (audioPlayer != null) {
+      audioPlayer!.dispose();
+    }
+
     super.dispose();
   }
 
@@ -158,14 +166,6 @@ class _ChatBubbleState extends State<ChatBubble> {
     );
     await locator<AudioService>().playAudio(audioPath!);
   }
-
-  // Future<String?> getImagePath() async {
-  //   final imagePath = await locator<LocalStorageService>().getImagePath(
-  //     chatId: widget.chatId,
-  //     messageId: widget.message.id!,
-  //   );
-  //   return imagePath;
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +216,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                 ),
                 onPressed: () async {
                   if (isPlaying) {
-                    await audioPlayer.pause();
+                    await audioPlayer!.pause();
                     isPlaying = false;
                   } else {
                     // await audioPlayer.resume();
@@ -248,9 +248,9 @@ class _ChatBubbleState extends State<ChatBubble> {
                       onChanged: (value) async {
                         final position = Duration(seconds: value.toInt());
 
-                        await audioPlayer.seek(position);
+                        await audioPlayer!.seek(position);
 
-                        await audioPlayer.resume();
+                        await audioPlayer!.resume();
                       },
                     ),
                   ),
@@ -298,63 +298,34 @@ class _ChatBubbleState extends State<ChatBubble> {
               ),
             )
           : decContainer(
-              width: screenWidth(context) / 2,
+              width: screenWidth(context) / 50,
               // height: screenWidth(context) / 2,
               color: Colors.blue,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(8.0),
-                child: widget.message.isDownloading
-                    ? decContainer(
-                        color: Colors.grey,
-                        child: const CircularProgressIndicator(),
-                      )
-                    : imagePath != null
-                        ? Image.file(
-                            File(imagePath!),
-                            fit: BoxFit.cover,
-                            // width: 150,
-                            // height: 150,
-                          )
-                        : Image.network(
-                            widget.message.imageUrl!,
-                            fit: BoxFit.cover,
-                            // width: 150,
-                            // height: 150,
-                          ),
-              ),
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: widget.message.isDownloading
+                      ? decContainer(
+                          color: Colors.grey,
+                          child: const CircularProgressIndicator(),
+                        )
+                      :
+                      // widget.message.path != null
+                      //     ?
+                      Image.file(
+                          File(widget.message.path!),
+                          fit: BoxFit.cover,
+                          // width: 150,
+                          // height: 150,
+                        )
+                  // : Image.network(
+                  //     widget.message.imageUrl!,
+                  //     fit: BoxFit.cover,
+                  //     // width: 150,
+                  //     // height: 150,
+                  //   ),
+                  ),
             );
     }
-
-    // Widget myImage() {
-    //   //todo: exibir a imagem de acordo com as suas proprias dimensoes
-    //   return decContainer(
-    //     width: screenWidth(context) / 2,
-    //     color: Colors.blue,
-    //     child: ClipRRect(
-    //       borderRadius: BorderRadius.circular(8.0),
-    //       child: widget.message.isDownloading
-    //           ? decContainer(
-    //               //todo: FutureBuilder.
-    //               color: Colors.grey,
-    //               child: const CircularProgressIndicator(),
-    //             )
-    //           : FutureBuilder<String?>(
-    //               future: getImagePath(),
-    //               builder: (context, snapshot) {
-    //                 if (snapshot.connectionState == ConnectionState.waiting) {
-    //                   return const CircularProgressIndicator();
-    //                 } else if (snapshot.hasError || !snapshot.hasData) {
-    //                   // Fallback para Image.network se o arquivo local não for encontrado ou houve erro
-    //                   return Image.network(widget.message.imageUrl!);
-    //                 } else {
-    //                   // Exibe a imagem localmente
-    //                   return Image.file(File(snapshot.data!));
-    //                 }
-    //               },
-    //             ),
-    //     ),
-    //   );
-    // }
 
     if (widget.message.message != '') {
       return myText();

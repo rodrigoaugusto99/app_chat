@@ -173,3 +173,13 @@ mas isso pode fzr demorar bastante ate p aparecer as mensagens. que tal fazer as
 Carregar as 15 primeiras mensgens, e JA mandar pra viewModel. Depois, carregar o mais algumas e mandar pra viewModel
 de novo. Ou seja, mandar logo as primeiras pra ja ir aparecendo o chat la pro usuario, inves de carregar uma leva
 grande de msgs logo de cara. Como faria isso?
+fazer isso com texto tbm. e quando ir la pro banco, fazer criptografado
+
+o que estou querendo fazer:
+se mandei a foto, eu baixei no meu app antes de enviar.
+se recebeu a foto agr e ta no chat - baixe na hora automaticamente.
+se recebeu enquanto estava off ou em outro chat - tem que clicar pra baixar.
+
+mandei ou recebi o audio, entao eu baixo automaticamente quando aparece ali no chat
+qnd veio do listener.
+o audio tbm eh baixado automaticamrnte quando eu entro no chat e la tem um audio que nao tenho baixado ainda.

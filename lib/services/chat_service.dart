@@ -96,11 +96,7 @@ class ChatService {
       for (var message in messagesSnapshot.docs) {
         //todo: if message does not existe, send some default error message to show on the place of old lost message.
         final messageModel = MessageModel.fromDocument(message);
-        final possiblePath = locator<LocalStorageService>().getPossiblePath(
-          chatId,
-          messageModel.id!,
-        );
-        messageModel.path = possiblePath;
+
         messages.add(messageModel);
       }
 
