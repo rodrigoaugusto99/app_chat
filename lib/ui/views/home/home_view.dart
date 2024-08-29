@@ -70,7 +70,7 @@ class HomeView extends StackedView<HomeViewModel> {
                               ),
                               styledText(
                                 height: 2,
-                                text: 'conteudo da utlima mensagemmmmmmmm',
+                                text: chat.lastMessage ?? 'NULL',
                                 overflow: TextOverflow.ellipsis,
                                 fontSize: 16,
                                 color: Colors.grey[600],
@@ -81,20 +81,21 @@ class HomeView extends StackedView<HomeViewModel> {
                         Column(
                           children: [
                             styledText(
-                              text: '00:00',
+                              text: chat.hourAndMinutes ?? 'NULL',
                               height: 0.5,
                               color: Colors.grey[600],
                             ),
                             heightSeparator(10),
-                            decContainer(
-                              allPadding: 5,
-                              radius: 10,
-                              color: const Color(0xff128c7e),
-                              child: styledText(
-                                text: '99',
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
+                            if (chat.countOFUnreadedMessages! > 0)
+                              decContainer(
+                                allPadding: 5,
+                                radius: 10,
+                                color: const Color(0xff128c7e),
+                                child: styledText(
+                                  text: chat.countOFUnreadedMessages.toString(),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
                           ],
                         )
                       ],

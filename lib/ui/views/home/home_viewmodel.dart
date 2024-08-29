@@ -1,3 +1,8 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'package:flutter/material.dart';
+import 'package:stacked/stacked.dart';
+import 'package:stacked_services/stacked_services.dart';
+
 import 'package:app_chat/app/app.dialogs.dart';
 import 'package:app_chat/app/app.locator.dart';
 import 'package:app_chat/app/app.logger.dart';
@@ -7,8 +12,6 @@ import 'package:app_chat/models/user_model.dart';
 import 'package:app_chat/services/auth_service.dart';
 import 'package:app_chat/services/chat_service.dart';
 import 'package:app_chat/services/user_service.dart';
-import 'package:stacked/stacked.dart';
-import 'package:stacked_services/stacked_services.dart';
 
 class HomeViewModel extends BaseViewModel {
   final _dialogService = locator<DialogService>();
@@ -22,7 +25,16 @@ class HomeViewModel extends BaseViewModel {
 //mas e se ficar null de repente? ai teria que colocar um listener, se for null, deslogue na hora,
 //evitando erro de null
   UserModel? user;
-  List<ChatModel>? chats;
+  //List<ChatModel>? chats;
+  HomeViewModel() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _chatService.chatsNotifier.addListener(() {
+        notifyListeners();
+      });
+    });
+  }
+
+  List<ChatModel>? get chats => _chatService.chatsNotifier.value;
 
   void showUsers() {
     _dialogService.showCustomDialog(
@@ -37,7 +49,7 @@ class HomeViewModel extends BaseViewModel {
     //!precisa disso? no app inteiro, n seria bom um listener q verifica se usuario esta online ou nao?
     if (user == null) return;
     _log.i(user!.id);
-    chats = _chatService.chats;
+
     if (chats == null) return;
 
     //iterando por todos os chats que o usuario tem

@@ -7,18 +7,21 @@ import 'package:app_chat/models/message_model.dart';
 import 'package:app_chat/services/local_storage_service.dart';
 import 'package:app_chat/services/user_service.dart';
 import 'package:app_chat/ui/utils/firestore_utils.dart';
+import 'package:app_chat/ui/utils/utiis.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 class ChatService {
   final _log = getLogger('ChatService');
   final _userService = locator<UserService>();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  List<ChatModel>? _chats;
-  List<ChatModel>? get chats => _chats;
+  // List<ChatModel>? _chats;
+  // List<ChatModel>? get chats => _chats;
+  final ValueNotifier<List<ChatModel>?> chatsNotifier = ValueNotifier(null);
 
   Future<void> init() async {
-    _chats = await getUserChats();
+    chatsNotifier.value = await getUserChats();
   }
 
   StreamSubscription? _actualChatSubscription;
@@ -114,17 +117,43 @@ class ChatService {
     }
   }
 
-  Future<void> setChatLastMessage(String chatId, MessageModel message) async {
-    final chat = chats!.firstWhere((chat) => chat.id == chatId);
-    if (message.audioUrl != null) {
-      chat.lastMessage = 'Audio';
-    } else if (message.imageUrl != null) {
+  Future<void> setChatLastMessage(
+      String chatId, MessageModel lastMessage) async {
+    // Cria uma nova lista a partir da lista atual de chats
+    final updatedChats = List<ChatModel>.from(chatsNotifier.value!);
+
+    // Encontra o chat que precisa ser atualizado
+    final chat = updatedChats.firstWhere((chat) => chat.id == chatId);
+
+    _log.f(chat.id);
+
+    // Atualiza a mensagem do chat com base no tipo de mensagem
+    if (lastMessage.audioUrl != '') {
+      chat.lastMessage = 'Áudio';
+    } else if (lastMessage.imageUrl != '') {
       chat.lastMessage = 'Imagem';
-    } else if (message.videoUrl != null) {
-      chat.lastMessage = 'Video';
+    } else if (lastMessage.videoUrl != '') {
+      chat.lastMessage = 'Vídeo';
     } else {
-      chat.lastMessage = message.message;
+      chat.lastMessage = lastMessage.message;
     }
+
+    // Atualiza a ValueNotifier com a nova lista
+    chatsNotifier.value = updatedChats;
+  }
+
+  Future<void> setChatLastMessageHourAndMinute(
+      String chatId, MessageModel lastMessage) async {
+    final updatedChats = List<ChatModel>.from(chatsNotifier.value!);
+    final chat = updatedChats.firstWhere((chat) => chat.id == chatId);
+    _log.f(chat.id);
+    chat.lastMessage = lastMessage.message!;
+    DateTime hourAndMinute = (lastMessage.createdAt).toDate();
+    String nowFormatted = formatHourAndMinute(hourAndMinute);
+    chat.hourAndMinutes = nowFormatted;
+
+    // Atualize a ValueNotifier com a nova lista
+    chatsNotifier.value = updatedChats;
   }
 
   Future<void> markAllMessagesAsRead(
@@ -302,7 +331,12 @@ class ChatService {
 
         chatModel.countOFUnreadedMessages = countOfMessagesNotReaded;
         final lastMessage = await getLastMessage(chatId);
-        chatModel.lastMessage = lastMessage?.message ?? '';
+        if (lastMessage != null) {
+          chatModel.lastMessage = lastMessage.message!;
+          DateTime hourAndMinute = (lastMessage.createdAt).toDate();
+          String nowFormatted = formatHourAndMinute(hourAndMinute);
+          chatModel.hourAndMinutes = nowFormatted;
+        }
 
         chats.add(chatModel);
       }

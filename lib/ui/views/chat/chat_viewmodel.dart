@@ -172,6 +172,7 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     notifyListeners();
     _chatService.setChatListener(chat, (newMessage) {
       _chatService.setChatLastMessage(chat.id, newMessage);
+      _chatService.setChatLastMessageHourAndMinute(chat.id, newMessage);
       _chatService.markThisMessagesAsRead(
         chatId: chat.id,
         messageId: newMessage.id!,
