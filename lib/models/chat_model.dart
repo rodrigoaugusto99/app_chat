@@ -6,6 +6,8 @@ class ChatModel {
   List<String> userIds;
   List<UserModel> users;
   String chatName;
+  String? lastMessage;
+  int? countOFUnreadedMessages;
   // String otherUserId;
   // String message;
   Timestamp createdAt;
@@ -17,6 +19,8 @@ class ChatModel {
     // required this.otherUserId,
     // required this.message,
     required this.createdAt,
+    this.lastMessage,
+    this.countOFUnreadedMessages,
   });
 
 //todo: logica de atribuir os users e chat name aqui? nao ne, SOLID !!

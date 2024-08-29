@@ -60,6 +60,7 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
 
   List<UserModel>? otherUses;
   List<MessageModel>? messages;
+  List<MessageModel> messagesNotReaded = [];
   List<MessagesByDay>? messagesGroupedByDays;
   UserModel? myUser;
   StreamSubscription? _subscription;
@@ -122,6 +123,10 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 
 //iterar por cada msg e inserir UserModel correspondente
     for (var message in messages!) {
+      //colocando as mensagens nao lidas em uma lista
+      if (!message.isReadByMe) {
+        messagesNotReaded.add(message);
+      }
       if (message.audioUrl != '') {
         //audiosToCheck.add(message);
         String? filePath = _localStorageService.checkIfFileIsDownloaded(
@@ -158,11 +163,20 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
       }
     }
 
+    //todo: logica p/ settar que todas as atuais mensagens foram vistas
+    _chatService.markAllMessagesAsRead(chat.id, messagesNotReaded);
+
     //messagesGroupedByDays = createExtractDayList(messages!.reversed.toList());
     messagesGroupedByDays = createExtractDayList(messages);
 
     notifyListeners();
     _chatService.setChatListener(chat, (newMessage) {
+      _chatService.setChatLastMessage(chat.id, newMessage);
+      _chatService.markThisMessagesAsRead(
+        chatId: chat.id,
+        messageId: newMessage.id!,
+      );
+      newMessage.isReadByMe = true;
       /*
       funcoes da viewModel que chamam funcao do service.
       Nessas funcoes, o intuito principal eh manipular
@@ -213,7 +227,7 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 
       notifyListeners();
     });
-    await Future.delayed(const Duration(seconds: 2));
+    //await Future.delayed(const Duration(seconds: 2));
     setBusy(false);
 
     //to checando em outro loop pra nao atrapalhar ou enlerdar o loop de todas as mensagens.
@@ -232,24 +246,28 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
   }
 
 //fiz essa funcao separada nao precisar usar o await la quando fazer a logica dentro do listener
-  void checkAndDownload({
+  Future<void> checkAndDownload({
     required MessageModel message,
     bool isAudio = false,
     bool isVideo = false,
     bool isImage = false,
-  }) {
+  }) async {
     String? filePath = _localStorageService.checkIfFileIsDownloaded(
       message: message,
       chatId: chat.id,
       isImage: true,
     );
     if (filePath == null) {
-      downloadFile(
+      final path = await downloadFile(
         message: message,
         isAudio: isAudio,
         isVideo: isVideo,
         isImage: isImage,
       );
+      if (path == null) return;
+      message.path = path;
+    } else {
+      message.path = filePath;
     }
   }
 
@@ -257,7 +275,7 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
 //todo: ai la no downloadFile dentro de _localStorageService, tbm tera esse parametro
 //todo:boleando para decidir se vai baixar com extensao de audio, imagem ou video.
 
-  Future<void> downloadFile({
+  Future<String?> downloadFile({
     required MessageModel message,
     bool isAudio = false,
     bool isVideo = false,
@@ -279,11 +297,12 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
       message.isDownloading = false;
       _log.f('isDownloading = false');
       message.hasError = true;
-      return;
+      return fileDownloaded;
     }
     message.isDownloading = false;
     _log.f('isDownloading = false');
     notifyListeners();
+    return null;
   }
 
   Future<void> _scrollToEnd() async {
@@ -449,10 +468,10 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     final ImagePicker picker = ImagePicker();
 
     // Permite que o usuário escolha qualquer tipo de mídia (imagem ou vídeo)
-    final XFile? file = await picker.pickImage(
-      source: ImageSource.gallery,
-      // Aqui usamos pickImage, que permite ao usuário escolher tanto imagem quanto vídeo
-    );
+    final XFile? file = await picker.pickMedia(
+
+        // Aqui usamos pickImage, que permite ao usuário escolher tanto imagem quanto vídeo
+        );
 
     if (file == null) {
       _log.i('Nenhuma mídia foi selecionada.');
@@ -462,6 +481,8 @@ ou seja, se estiver QUASE NO FIM DO SCROLL, entao rola la pro final qnd abrir te
     //File mediaFile = File(file.path);
     return file;
   }
+
+  void navToViewer({required}) {}
 }
 
 /*

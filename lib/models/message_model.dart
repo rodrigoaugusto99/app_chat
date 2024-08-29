@@ -16,6 +16,7 @@ class MessageModel {
   bool hasError;
   String? path;
   bool needToDownload;
+  bool isReadByMe;
   MessageModel({
     this.id,
     this.user,
@@ -28,6 +29,7 @@ class MessageModel {
     this.isDownloading = false,
     this.hasError = false,
     this.needToDownload = false,
+    this.isReadByMe = false,
     required this.createdAt,
   });
 

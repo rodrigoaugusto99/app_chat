@@ -117,11 +117,13 @@ class ChatView extends StackedView<ChatViewModel> {
                                 children: [
                                   message.senderId == viewModel.myUser!.id
                                       ? ChatBubble(
+                                          onTap: viewModel.navToViewer,
                                           isMe: true,
                                           chatId: chat.id,
                                           message: message,
                                         )
                                       : ChatBubble(
+                                          onTap: viewModel.navToViewer,
                                           chatId: chat.id,
                                           message: message,
                                         )

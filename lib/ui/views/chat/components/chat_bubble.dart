@@ -10,6 +10,7 @@ import 'package:app_chat/ui/utils/utiis.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:video_player/video_player.dart';
 
 final _log = getLogger('ChatBubble');
 
@@ -17,10 +18,12 @@ class ChatBubble extends StatefulWidget {
   final String chatId;
   final MessageModel message;
   final bool isMe;
+  final Function()? onTap;
   const ChatBubble({
     Key? key,
     required this.message,
     required this.chatId,
+    required this.onTap,
     this.isMe = false,
   }) : super(key: key);
 
@@ -40,69 +43,32 @@ class _ChatBubbleState extends State<ChatBubble> {
     super.initState();
     if (widget.message.audioUrl != '') {
       initAudio();
-    } else if (widget.message.imageUrl != '') {
-      //initImage();
+    } else if (widget.message.videoUrl != '') {
+      initVideo();
     }
   }
 
-  // String getPossiblePath() {
-  //   return '${locator<LocalStorageService>().directory!.path}/${widget.chatId}/${widget.message.id}.jpg';
-  // }
+  late VideoPlayerController _controller;
 
-  //String? imagePath;
+  void initVideo() {
+    _controller =
+        VideoPlayerController.networkUrl(Uri.parse(widget.message.videoUrl!));
 
-  Future<void> initImage() async {
-    // if (!widget.message.needToDownload) {
-    //   imagePath = getPossiblePath();
-    //   setState(() {});
-    // }
+    _controller.addListener(() {
+      setState(() {});
+    });
+    // _controller.setLooping(true);
+    // _controller.initialize().then((_) => setState(() {}));
+    // _controller.play();
+    _controller.initialize();
+  }
 
-    //se eu colocar esse delay, da tempo de esperar o downlaod local antes de pegar o arquivo.
-    //se la retornou null, entao eu aqui na view la no build eu chamo o image.network
-    //todo: e se eu fizer um singleton com os downloads? ai eu teria acesso aqui tbm no loading p baixar local
-    // await Future.delayed(const Duration(seconds: 2));
-//     final newImagePath = await locator<LocalStorageService>().getImagePath(
-//       chatId: widget.chatId,
-//       messageId: widget.message.id!,
-//     );
-//     // _log.v('image path from getImagePath(): $newImagePath');
-//     // imagePath = newImagePath;
-//     if (newImagePath == null) {
-// //!se for null, quer dizer que nao tenho essa img no meu dispositivo, entao vai dar erro
-// //ao exibir aqui. Entao, vou colocar uma flag nela p dizer que nao ta baixada.*/
-//       widget.message.needToDownload = true;
+  void playVideo() {
+    _controller.play();
+  }
 
-//       /*isso acontece na primeira vez, que entra no listener essa mensagem.
-//       pois a mensagem ja foi enviada para o firestore e pegamos o snapshot com
-//       o listener antes mesmo de salvarmos essa foto localmente.
-
-//       //!e se eu colocasse delay de 500 milisegundos pra carregar a imagem?
-//       isso pode dar tempo, mas se for uma imagem mt grande, capaz de n ter problema tbm,
-//       tipo ql o problema de ver imagem pela internet so naquele momento raro?
-
-//       mas...se for video, demora mais para baixar, entao nao deve valer a pena colocar
-//       esse delay. Que tal chamarmos o metodo de getVideoPath de tal segundo em tal segundo,
-//       e vamos ficar ouvindo as respostas. enquanto continuar retornando null, estamos exibindo
-//       o arquivo com network, mas no primeiro momento que retornar o caminho, entao podemos
-//       atribuir o videoPath e chamar o setState pra comecar a usar o arquivo local ao inves do remoto.
-//       */
-//       _log.f('usando image.network');
-//     }
-//     setState(() {});
-    //todo: se for null, eu poderia ja ter baixado la no chatviewmodel ne ou service??!?!?! ui !
-    //nem da, pq de qlqr forma temos que fazer o doc p pegar o id da mensagem pra poder ai sim
-//fazer o download com o arquivo com o nome correto, e nao tem await que faca o listener nao
-//capturar quando esse novo doc for criado.
-
-//a n ser que eu faca o id ser gerado por uuid p eu ter mais controle sobre isso
-
-//     if (imagePath == null) {
-// //se nao tem o arquivo, mostrar pela internet mesmo
-//       imageFile = Image.network(imageUrl);
-//     } else {
-//       //se pegou o arquivo, mostre
-//       imageFile = File(imagePath);
-//     }
+  void pauseVideo() {
+    _controller.pause();
   }
 
   void initAudio() {
@@ -129,6 +95,7 @@ class _ChatBubbleState extends State<ChatBubble> {
   }
 
   Future<void> downloadIt() async {
+    widget.message.needToDownload = false;
     widget.message.isDownloading = true;
     setState(() {});
     try {
@@ -298,15 +265,16 @@ class _ChatBubbleState extends State<ChatBubble> {
               ),
             )
           : decContainer(
-              width: screenWidth(context) / 50,
+              width: screenWidth(context) / 2,
               // height: screenWidth(context) / 2,
               color: Colors.blue,
               child: ClipRRect(
                   borderRadius: BorderRadius.circular(8.0),
                   child: widget.message.isDownloading
-                      ? decContainer(
-                          color: Colors.grey,
-                          child: const CircularProgressIndicator(),
+                      ? const SizedBox(
+                          height: 50,
+                          width: 50,
+                          child: CircularProgressIndicator(),
                         )
                       :
                       // widget.message.path != null
@@ -327,13 +295,54 @@ class _ChatBubbleState extends State<ChatBubble> {
             );
     }
 
+    Widget myVideo() {
+      return Stack(
+        children: [
+          decContainer(
+            alignment: Alignment.center,
+            width: screenWidth(context) / 2,
+            height: screenWidth(context) / 2,
+            color: Colors.blue,
+            child: _controller.value.isInitialized
+                ? AspectRatio(
+                    aspectRatio: _controller.value.aspectRatio,
+                    child: VideoPlayer(_controller),
+                  )
+                : Container(),
+          ),
+          Align(
+            alignment: Alignment.center,
+            child: decContainer(
+              onTap: widget.onTap,
+              // onTap: _controller.value.isPlaying
+              //     ? () => pauseVideo()
+              //     : () => playVideo(),
+              child: Icon(
+                _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                size: 30,
+              ),
+            ),
+          ),
+          const Positioned(
+            bottom: 5,
+            child: Row(
+              children: [
+                //tempo atual
+                //slide
+                //tempo total
+              ],
+            ),
+          )
+        ],
+      );
+    }
+
     if (widget.message.message != '') {
       return myText();
     } else if (widget.message.audioUrl != '') {
       return myAudio();
     } else if (widget.message.videoUrl != '') {
-      //return myVideo();
-      return Container();
+      return myVideo();
     } else if (widget.message.imageUrl != '') {
       return myImage();
     }

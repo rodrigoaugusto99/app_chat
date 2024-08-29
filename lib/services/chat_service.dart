@@ -76,7 +76,110 @@ class ChatService {
     _actualChatSubscription!.cancel();
   }
 
-  Future<List<MessageModel>> getMessages(String chatId) async {
+  Future<void> markThisMessagesAsRead(
+      {required String messageId, required String chatId}) async {
+    // Obter o ID do usuário atual
+    final currentUserId = _userService.user.id;
+
+    if (currentUserId == null) {
+      _log.e('Usuário não autenticado');
+      return;
+    }
+
+    // Referência para a coleção de mensagens dentro do chat
+    final messageDocRef = FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(messageId);
+
+    try {
+      // Obter todas as mensagens
+      final messageDocSnapshot = await messageDocRef.get();
+
+      List<String> readByList =
+          List<String>.from(messageDocSnapshot['readBy'] ?? []);
+
+      if (!readByList.contains(currentUserId)) {
+        // Adicionar o ID do usuário ao array readBy
+        readByList.add(currentUserId);
+
+        // Atualizar o documento da mensagem com o novo array readBy
+        await messageDocSnapshot.reference.update({'readBy': readByList});
+      }
+
+      _log.i('Mensagem lida pelo usuário $currentUserId.');
+    } catch (e) {
+      _log.e('Erro ao marcar as mensagem como lida: $e');
+    }
+  }
+
+  Future<void> setChatLastMessage(String chatId, MessageModel message) async {
+    final chat = chats!.firstWhere((chat) => chat.id == chatId);
+    if (message.audioUrl != null) {
+      chat.lastMessage = 'Audio';
+    } else if (message.imageUrl != null) {
+      chat.lastMessage = 'Imagem';
+    } else if (message.videoUrl != null) {
+      chat.lastMessage = 'Video';
+    } else {
+      chat.lastMessage = message.message;
+    }
+  }
+
+  Future<void> markAllMessagesAsRead(
+      String chatId, List<MessageModel> notReadedMessages) async {
+    // Obter o ID do usuário atual
+    final currentUserId = _userService.user.id;
+
+    if (currentUserId == null) {
+      _log.e('Usuário não autenticado');
+      return;
+    }
+
+    // Referência para a coleção de mensagens dentro do chat
+    final CollectionReference messagesRef = FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages');
+
+    _log.i(notReadedMessages);
+
+    try {
+      for (var msg in notReadedMessages) {
+        final messageDoc = await messagesRef.doc(msg.id).get();
+
+        List<String> readByList = List<String>.from(messageDoc['readBy'] ?? []);
+
+        if (!readByList.contains(currentUserId)) {
+          // Adicionar o ID do usuário ao array readBy
+          readByList.add(currentUserId);
+
+          // Atualizar o documento da mensagem com o novo array readBy
+          await messageDoc.reference.update({'readBy': readByList});
+        }
+      }
+      //todo: tbm preciso zerar o chatModel.countOFUnreadedMessages
+
+      _log.i(
+          'Todas as mensagens foram marcadas como lidas pelo usuário $currentUserId.');
+    } catch (e) {
+      _log.e('Erro ao marcar as mensagens como lidas: $e');
+    }
+  }
+
+  //! quando eue carrego os chats, um por um eu vou pegando o a ultima mensagem usando orderby com createdat.
+  /*se nesse ultima mensagen, nao tiver meu id naquele array, entao esse chat ja tem msg q n vi.
+  Posso tbm pegar os ultimos 10 mensagens por ex. e ver quantos ainda n foram lidos por mim. 
+  se for mais de 9, colocar 9+ 
+  e colocar propriedade em chatModel pra mudar as coisinhas. propriedade - msgNotReadeds
+  
+  la no chatviewmodel, quando a gente for iterarpor cada msg dps da primeira leva, 
+  vms armazenar as msgs q n foram lidas e vms mandar elas pra quele metodo de 
+  marcar como lida. vms fzr isso p evitar ter q mandar o firestore iterar pela
+  porra toda so pra marcar algumas como lidas. */
+
+  Future<MessageModel?> getLastMessage(String chatId) async {
     // Referência para o Firestore
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -84,25 +187,58 @@ class ChatService {
       // Referência para a subcollection 'chats'
       CollectionReference messagesRef =
           firestore.collection('chats').doc(chatId).collection('messages');
-      QuerySnapshot messagesSnapshot =
-          await messagesRef.orderBy('createdAt', descending: true).get();
+      QuerySnapshot messagesSnapshot = await messagesRef
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .get();
 
       if (messagesSnapshot.docs.isEmpty) {
-        return [];
+        return null;
       }
+      final messageSnapshot = messagesSnapshot.docs.first;
+      final messageModel = MessageModel.fromDocument(messageSnapshot);
 
-      List<MessageModel> messages = [];
-
-      for (var message in messagesSnapshot.docs) {
-        //todo: if message does not existe, send some default error message to show on the place of old lost message.
-        final messageModel = MessageModel.fromDocument(message);
-
-        messages.add(messageModel);
-      }
-
-      return messages;
+      return messageModel;
     } catch (e) {
       _log.i('Erro ao enviar a mensagem: $e');
+      throw Exception('Erro desconhecido');
+    }
+  }
+
+  Future<int> getUnreadMessagesCount(String chatId, String userId) async {
+    // Referência para o Firestore
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    try {
+      // Referência para a subcollection 'chats'
+      CollectionReference messagesRef =
+          firestore.collection('chats').doc(chatId).collection('messages');
+
+      // Obtendo as últimas 10 mensagens, ordenadas por data de criação
+      QuerySnapshot messagesSnapshot = await messagesRef
+          .orderBy('createdAt', descending: true)
+          .limit(10)
+          .get();
+
+      if (messagesSnapshot.docs.isEmpty) {
+        return 0; // Nenhuma mensagem encontrada
+      }
+
+      int unreadCount = 0;
+
+      // Iterando sobre as mensagens e verificando se foram lidas pelo usuário
+      for (var messageSnapshot in messagesSnapshot.docs) {
+        final messageData = messageSnapshot.data() as Map<String, dynamic>;
+        final List<dynamic> readBy = messageData['readBy'] ?? [];
+
+        if (!readBy.contains(userId)) {
+          unreadCount++;
+        }
+      }
+
+      return unreadCount;
+    } catch (e) {
+      _log.i('Erro ao buscar as mensagens: $e');
       throw Exception('Erro desconhecido');
     }
   }
@@ -161,6 +297,12 @@ class ChatService {
           chatModel.users.add(userModel);
         }
         chatModel.chatName = setChatName(chatModel);
+        final countOfMessagesNotReaded =
+            await getUnreadMessagesCount(chatId, _userService.user.id!);
+
+        chatModel.countOFUnreadedMessages = countOfMessagesNotReaded;
+        final lastMessage = await getLastMessage(chatId);
+        chatModel.lastMessage = lastMessage?.message ?? '';
 
         chats.add(chatModel);
       }
@@ -220,7 +362,16 @@ class ChatService {
           _log.e('Cannot find message');
           continue;
         }
+        final data = messageDoc.data() as Map<String, dynamic>;
+
+        List<String> readByList = List<String>.from(data['readBy']);
+
+//n coloquei o atributo readBy no model msm, fodac
         final messageModel = MessageModel.fromDocument(messageDoc);
+
+        if (readByList.contains(_userService.user.id)) {
+          messageModel.isReadByMe = true;
+        }
 
         messages.add(messageModel);
       }
@@ -321,6 +472,7 @@ class ChatService {
         //'createdAt': FieldValue.serverTimestamp(),
 
         'createdAt': Timestamp.fromDate(DateTime.now()),
+        'readBy': [_userService.user.id!]
       };
 //todo: se existir futureId, respeita-lo aqui.
       if (futureId == null) {
