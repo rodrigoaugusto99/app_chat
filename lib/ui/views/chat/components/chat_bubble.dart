@@ -252,10 +252,12 @@ class _ChatBubbleState extends State<ChatBubble> {
       //todo: exibir a imagem de acordo com as suas proprias dimensoes
       return widget.message.needToDownload
           ? decContainer(
+              radius: 8,
+              allPadding: 5,
               alignment: Alignment.center,
               width: screenWidth(context) / 2,
               height: screenWidth(context) / 2,
-              color: Colors.blue,
+              color: const Color(0xff128c7e),
               child: GestureDetector(
                 onTap: () => downloadIt(),
                 child: const Icon(
@@ -264,34 +266,48 @@ class _ChatBubbleState extends State<ChatBubble> {
                 ),
               ),
             )
-          : decContainer(
-              width: screenWidth(context) / 2,
-              // height: screenWidth(context) / 2,
-              color: Colors.blue,
-              child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8.0),
-                  child: widget.message.isDownloading
-                      ? const SizedBox(
-                          height: 50,
-                          width: 50,
-                          child: CircularProgressIndicator(),
-                        )
-                      :
-                      // widget.message.path != null
-                      //     ?
-                      Image.file(
-                          File(widget.message.path!),
-                          fit: BoxFit.cover,
-                          // width: 150,
-                          // height: 150,
-                        )
-                  // : Image.network(
-                  //     widget.message.imageUrl!,
-                  //     fit: BoxFit.cover,
-                  //     // width: 150,
-                  //     // height: 150,
-                  //   ),
+          : Stack(
+              children: [
+                decContainer(
+                  radius: 8,
+                  allPadding: 5,
+                  width: screenWidth(context) / 2,
+                  // height: screenWidth(context) / 2,
+                  color: const Color(0xff128c7e),
+                  child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8.0),
+                      child: widget.message.isDownloading
+                          ? const SizedBox(
+                              height: 50,
+                              width: 50,
+                              child: CircularProgressIndicator(),
+                            )
+                          :
+                          // widget.message.path != null
+                          //     ?
+                          Image.file(
+                              File(widget.message.path!),
+                              fit: BoxFit.cover,
+                              // width: 150,
+                              // height: 150,
+                            )
+                      // : Image.network(
+                      //     widget.message.imageUrl!,
+                      //     fit: BoxFit.cover,
+                      //     // width: 150,
+                      //     // height: 150,
+                      //   ),
+                      ),
+                ),
+                Positioned(
+                  bottom: 10,
+                  right: 10,
+                  child: styledText(
+                    text: timestampFormatted,
+                    color: Colors.white,
                   ),
+                )
+              ],
             );
     }
 
