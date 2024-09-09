@@ -332,7 +332,16 @@ class ChatService {
         chatModel.countOFUnreadedMessages = countOfMessagesNotReaded;
         final lastMessage = await getLastMessage(chatId);
         if (lastMessage != null) {
-          chatModel.lastMessage = lastMessage.message!;
+          if (lastMessage.audioUrl != '') {
+            chatModel.lastMessage = 'Áudio';
+          } else if (lastMessage.imageUrl != '') {
+            chatModel.lastMessage = 'Imagem';
+          } else if (lastMessage.videoUrl != '') {
+            chatModel.lastMessage = 'Vídeo';
+          } else {
+            chatModel.lastMessage = lastMessage.message!;
+          }
+
           DateTime hourAndMinute = (lastMessage.createdAt).toDate();
           String nowFormatted = formatHourAndMinute(hourAndMinute);
           chatModel.hourAndMinutes = nowFormatted;
