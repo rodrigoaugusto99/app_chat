@@ -147,7 +147,7 @@ class ChatService {
     final updatedChats = List<ChatModel>.from(chatsNotifier.value!);
     final chat = updatedChats.firstWhere((chat) => chat.id == chatId);
     _log.f(chat.id);
-    chat.lastMessage = lastMessage.message!;
+    //chat.lastMessage = lastMessage.message!;
     DateTime hourAndMinute = (lastMessage.createdAt).toDate();
     String nowFormatted = formatHourAndMinute(hourAndMinute);
     chat.hourAndMinutes = nowFormatted;
