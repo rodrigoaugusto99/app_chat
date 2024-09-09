@@ -16,6 +16,7 @@ import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:stacked/stacked.dart';
 import 'package:path/path.dart' as path;
+import 'package:stacked_services/stacked_services.dart';
 import 'package:uuid/uuid.dart';
 
 class MessagesByDay {
@@ -67,11 +68,20 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
 
   final _localStorageService = locator<LocalStorageService>();
   final _recorderService = locator<RecorderService>();
+  final _navigationService = locator<NavigationService>();
 //!
 //!vou precisar fzr funcao de voltar manualmente pro back do appbar e pro willpop
 //!pois preciso dar dispose no scroll muito rapido pra evitar
 //!dessa forma, evita o erro no terminal talvez
   // void back() {
+  //   _navigationService.back();
+  // }
+
+  // void back() {
+  //   if (_subscription != null) {
+  //     _subscription!.cancel();
+  //     _chatService.disposeListener();
+  //   }
   //   _navigationService.back();
   // }
 
@@ -81,9 +91,10 @@ class ChatViewModel extends BaseViewModel with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
 
     super.dispose();
+    _chatService.disposeListener();
     if (_subscription == null) return;
     _subscription!.cancel();
-    _chatService.disposeListener();
+
     //_recorderService.dispose();
     // _localStorageService.dispose();
   }

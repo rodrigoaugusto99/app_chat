@@ -32,6 +32,10 @@ class ChatView extends StackedView<ChatViewModel> {
               foregroundColor: Colors.white,
               backgroundColor: Colors.grey[900],
               // Dividindo nomes dos usuários por vírgula e exibindo imagens lado a lado
+              // leading: IconButton(
+              //   icon: const Icon(Icons.arrow_back),
+              //   onPressed: viewModel.back,
+              // ),
               title: Padding(
                 padding: const EdgeInsets.symmetric(
                   vertical: 10,
